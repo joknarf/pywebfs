@@ -158,7 +158,6 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         for s in search.split():
             try:
                 rexp.append(re.compile(accent_re(s), re.IGNORECASE))
-                self.log_message(accent_re(s))
             except:
                 err = 1
         if err:
@@ -216,12 +215,9 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
 
     def end_headers(self):
         is_file = "?" not in self.path and not self.path.endswith("/")
-        # is_file = False
-        # This part adds extra headers for some file types.
-        self.log_message(str(is_file))
+        # adds extra headers for some file types.
         if is_file:
             mimetype = self.guess_type(self.path)
-            self.log_message(mimetype)
             if mimetype in ["text/plain"]:
                 self.send_header("Content-Type", "text/plain")
                 self.send_header("Content-Disposition", "inline")
@@ -249,7 +245,6 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             displaypath = urllib.parse.unquote(p.path)
         path = displaypath
         displaypath = html.escape(displaypath, quote=False)
-        self.log_message(path)
         title = f"{self.server.title} - {displaypath}"
         htmldoc = HTML
         htmldoc += f"<title>{title}</title>\n</head>"
