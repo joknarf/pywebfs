@@ -290,7 +290,7 @@ class HTTPFileServer(ThreadingHTTPServer):
 
 def main():
     """start http server according to args"""
-    parser = argparse.ArgumentParser(prog="python -m httpfile_server")
+    parser = argparse.ArgumentParser(prog="pywebfs")
     parser.add_argument(
         "-s", "--server", type=str, default="0.0.0.0", help="HTTP server listen address"
     )
