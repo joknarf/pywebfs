@@ -29,13 +29,13 @@ CSS = f"""
         margin: 0px;
         padding: 0px;
         background-color: #F3F4FF;
-        border-radius: 0px 0px 10px 10px;
+        /*border-radius: 0px 0px 10px 10px;*/
         font-family: verdana, helvetica, arial, sans-serif;
         font-size: 1em;
     }}
     @media screen and (max-device-width: 480px){{
         body{{
-            -webkit-text-size-adjust: 100%;
+            -webkit-text-size-adjust: 150%;
         }}
     }}
     a {{ text-decoration: none; }}
@@ -43,8 +43,7 @@ CSS = f"""
         list-style-type: none;
         padding: 10px 20px;
     }}
-    form {{ display: inline-block; }}
-    hr {{ margin-top: 30px; }}
+    form {{ display: inline; }}
     svg {{
         width: 16px;
         height: 16px;
@@ -57,26 +56,40 @@ CSS = f"""
         width: calc(100% - 40px);
         margin: 0px;
         border: 0px;
-        border-radius: 10px 10px 0px 0px;
+        /*border-radius: 10px 10px 0px 0px;*/
         background-color: #aaa;
         padding: 10px 20px;
+        display: inline-block;
     }}
 
     main {{
         margin-top: 43px;
     }}
-
-    .search {{
+    input {{
         display: inline-block;
-        width: 30px;
+        margin-right: 10px;
+        vertical-align: center;
+    }}
+    .search {{
+        -webkit-appearance: none;
+        -webkit-border-radius: none;
+        appearance: none;
+        border-radius: 0px;
+        height: 25px;
+        border: 0px;
         background: url('data:image/svg+xml;utf8,{SEARCH_CSS}') no-repeat;
-        background; url(/_fb/search.svg);
+        background-size: 18px 18px;
+        background-position-y: center;
+    }}
+    .home {{
+        display: inline-block;
+        text-indent: 25px;
+        vertical-align: center;
+        background: url('data:image/svg+xml;utf8,{HOME_CSS}') no-repeat;
         background-size: 18px 18px;
         background-position-y: bottom;
-        background-position-x: center;
-        margin-right: 10px;
-        border: 0px;
     }}
+
     .folder {{
         display: inline-block;
         text-indent: 20px;
@@ -102,13 +115,6 @@ CSS = f"""
         background-size: 16px 16px;
         width: 100px;
     }}
-    .home {{
-        display: inline-block;
-        text-indent: 25px;
-        background: url('data:image/svg+xml;utf8,{HOME_CSS}') no-repeat;
-        background-size: 18px 18px;
-        background-position-y: bottom;
-    }}
 """
 
 ENC = sys.getfilesystemencoding()
@@ -120,6 +126,10 @@ HTML = f"""
 <link rel="stylesheet" href="/style.css">
 <meta charset="{ENC}">
 """
+
+# <style>
+# {CSS}
+# </style>
 
 
 def accent_re(rexp):
@@ -260,11 +270,14 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             )
         htmldoc += "<header>"
         # htmldoc += '<div>'
-        htmldoc += "<form>"
+        htmldoc += "<form name=search>"
         htmldoc += f"<input type=text name=search value='{search}' autofocus>"
-        htmldoc += "<input type=submit value='' class=search>"
-        htmldoc += "</form>"
+        #htmldoc += '<a href="javascript:document.forms[\'search\'].submit()" class="search">&nbsp;</a>'
+        htmldoc += '<input type=submit value="&nbsp;&nbsp;&nbsp;" class="search">'
+
+        htmldoc += ''
         htmldoc += f"{href}\n</header>"
+        htmldoc += "</form>"
         htmldoc += "<main><ul>"
 
         enddoc = "\n</ul>\n</main></body>\n</html>\n"
