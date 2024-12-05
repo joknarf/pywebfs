@@ -13,4 +13,4 @@ $ pywebfs -d /mydir -t "my fileserver" -s 0.0.0.0 -p 8080
 ```
 Browse/Download/Search files using browser `http://<yourserver>:8080`
 
-![image](https://github.com/user-attachments/assets/40fdd5e3-8630-4cb3-84c0-74c7c2fecefa)
+![image](https://github.com/user-attachments/assets/ebb9957f-5a10-4e71-8db7-ee19dd9ecc7e)
