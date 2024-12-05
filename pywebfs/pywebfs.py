@@ -25,45 +25,59 @@ LINK_CSS = '<svg width="16px" height="16px" viewBox="0 0 24 24" fill="none" xmln
 SEARCH_CSS = '<svg width="16px" height="16px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M16.6725 16.6412L21 21M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z" stroke="%23000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>'
 
 CSS = f"""
+    html, body: {{
+        margin:0px;
+        border:0px;
+    }}
     body {{
-        margin: 0px;
         padding: 0px;
-        background-color: #F3F4FF;
-        /*border-radius: 0px 0px 10px 10px;*/
+        background-color: #333;
         font-family: verdana, helvetica, arial, sans-serif;
         font-size: 1em;
     }}
-    @media screen and (max-device-width: 480px){{
-        body{{
-            -webkit-text-size-adjust: 150%;
-        }}
+    div {{
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+    }}
+    .header {{
+        background-color: #aaa;
+        z-index: 2;
+        border-radius: 10px 10px 0px 0px;
+        padding: 10px 20px 10px 10px;
+        display: flex;
+        line-height: 120%;
+    }}
+    .mask {{
+        width: 100%;
+        margin: 0px;
+        padding: 0px 30px 0px 0px;
+        background-color: #333;
+        z-index: 1;
+        top: 0px;
+        left: 0px;
+        position: sticky;
+        display: flex;
+    }}
+    .list {{
+        width: calc(100% - 20px);
+        margin: 0px 0px 10px 0px;
+        background-color: #F3F4FF;
+        border-radius: 0px 10px 10px 10px;
+        z-index: 3;
     }}
     a {{ text-decoration: none; }}
     ul {{ 
+        line-height: 150%;
         list-style-type: none;
         padding: 10px 20px;
+        margin: 0;
     }}
     form {{ display: inline; }}
     svg {{
         width: 16px;
         height: 16px;
         padding-right: 5px;
-    }}
-    header {{
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: calc(100% - 40px);
-        margin: 0px;
-        border: 0px;
-        /*border-radius: 10px 10px 0px 0px;*/
-        background-color: #aaa;
-        padding: 10px 20px;
-        display: inline-block;
-    }}
-
-    main {{
-        margin-top: 43px;
     }}
     input {{
         display: inline-block;
@@ -87,34 +101,39 @@ CSS = f"""
         vertical-align: center;
         background: url('data:image/svg+xml;utf8,{HOME_CSS}') no-repeat;
         background-size: 18px 18px;
-        background-position-y: bottom;
+        background-position-y: 70%;
     }}
-
+    
     .folder {{
-        display: inline-block;
-        text-indent: 20px;
         background: url('data:image/svg+xml;utf8,{FOLDER_CSS}') no-repeat;
-        background-size: 16px 16px;
     }}
     .file {{
-        display: inline-block;
-        text-indent: 20px;
         background: url('data:image/svg+xml;utf8,{FILE_CSS}') no-repeat;
-        background-size: 16px 16px;
     }}
     .link {{
-        display: inline-block;
-        text-indent: 20px;
         background: url('data:image/svg+xml;utf8,{LINK_CSS}') no-repeat;
-        background-size: 16px 16px;
     }}
     .upfolder {{
-        display: inline-block;
-        text-indent: 20px;
         background: url('data:image/svg+xml;utf8,{UPFOLDER_CSS}') no-repeat;
-        background-size: 16px 16px;
         width: 100px;
     }}
+    .folder, .file, .link, .upfolder {{
+        display: inline-block;
+        text-indent: 20px;
+        background-size: 16px 16px;
+        background-position-y: 4px;
+    }}
+
+    @media screen and (max-device-width: 480px){{
+        body {{
+            -webkit-text-size-adjust: 180%;
+        }}
+        .search, .home, .folder, .file, .link, .upfolder {{
+            background-size: 32px 32px;
+            text-indent: 40px;
+        }}
+    }}
+
 """
 
 ENC = sys.getfilesystemencoding()
@@ -126,10 +145,11 @@ HTML = f"""
 <link rel="stylesheet" href="/style.css">
 <meta charset="{ENC}">
 """
-
+#<link rel="stylesheet" href="/style.css">
 # <style>
 # {CSS}
 # </style>
+
 
 
 def accent_re(rexp):
@@ -268,19 +288,17 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 urllib.parse.quote(fpath, errors="surrogatepass"),
                 html.escape(dir, quote=False),
             )
-        htmldoc += "<header>"
-        # htmldoc += '<div>'
+        #htmldoc += "<header>"
+        htmldoc += '<div class=mask>'
+        htmldoc += '<div class=header>'
         htmldoc += "<form name=search>"
         htmldoc += f"<input type=text name=search value='{search}' autofocus>"
-        #htmldoc += '<a href="javascript:document.forms[\'search\'].submit()" class="search">&nbsp;</a>'
         htmldoc += '<input type=submit value="&nbsp;&nbsp;&nbsp;" class="search">'
+        htmldoc += f"{href}\n</form>"
+        htmldoc += "</div></div>"
+        htmldoc += "<div class=list><ul>"
 
-        htmldoc += ''
-        htmldoc += f"{href}\n"
-        htmldoc += "</form>"
-        htmldoc += "</header><main><ul>"
-
-        enddoc = "\n</ul>\n</main></body>\n</html>\n"
+        enddoc = "\n</ul>\n</div></body>\n</html>\n"
 
         if p.query:
             htmldoc += self.find_files(search, "." + path) + enddoc
