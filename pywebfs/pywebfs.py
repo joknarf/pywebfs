@@ -276,9 +276,9 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         htmldoc += '<input type=submit value="&nbsp;&nbsp;&nbsp;" class="search">'
 
         htmldoc += ''
-        htmldoc += f"{href}\n</header>"
+        htmldoc += f"{href}\n"
         htmldoc += "</form>"
-        htmldoc += "<main><ul>"
+        htmldoc += "</header><main><ul>"
 
         enddoc = "\n</ul>\n</main></body>\n</html>\n"
 
