@@ -150,7 +150,7 @@ HTML = f"""
 # {CSS}
 # </style>
 
-RE_AGENT = re.compile(r"(Chrome|Safari|Firefox|Opera|Lynx)[^ ]*")
+RE_AGENT = re.compile(r"(Edg|Chrome|Safari|Firefox|Opera|Lynx)[^ ]*")
 
 def accent_re(rexp):
     """ regexp search any accent """
@@ -258,11 +258,11 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         """do http calls"""
         user_agent = self.headers.get("User-Agent") or ""
         #self.log_message(user_agent)
-        m = RE_AGENT.search(user_agent)
-        if m:
-            browser = m[0]
-        else:
-            browser = user_agent.split(" ")[-1]
+        browser = user_agent.split()[-1]
+        if not browser.startswith("Edg"):
+            m = RE_AGENT.search(user_agent)
+            if m:
+                browser = m[0]
         self.log_message(
             "%s: %s http://%s%s",
             browser,
