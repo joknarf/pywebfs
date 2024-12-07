@@ -141,7 +141,7 @@ HTML = f"""
 <!DOCTYPE HTML>
 <html lang="en">
 <head>
-<link rel="icon" href="/favicon.svg">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/style.css">
 <meta charset="{ENC}">
 """
@@ -150,7 +150,7 @@ HTML = f"""
 # {CSS}
 # </style>
 
-
+RE_AGENT = re.compile(r"(Chrome|Safari|Firefox|Opera|Lynx)[^ ]*")
 
 def accent_re(rexp):
     """ regexp search any accent """
@@ -174,14 +174,17 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         encoded = data.encode(ENC, "surrogateescape")
         self.send_header("Content-Length", str(len(encoded)))
         self.end_headers()
-        self.wfile.write(encoded)
+        try: 
+            self.wfile.write(encoded)
+        except:
+            pass
 
     def end_headers(self):
         is_file = "?" not in self.path and not self.path.endswith("/")
         # adds extra headers for some file types.
         if is_file:
             mimetype = self.guess_type(self.path)
-            self.log_message(mimetype)
+            # self.log_message(mimetype)
             if mimetype in ["text/plain"]:
                 self.send_header("Content-Disposition", "inline")
             self.send_header("Content-Type", mimetype)
@@ -253,8 +256,19 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         """do http calls"""
+        user_agent = self.headers.get("User-Agent") or ""
+        #self.log_message(user_agent)
+        m = RE_AGENT.search(user_agent)
+        if m:
+            browser = m[0]
+        else:
+            browser = user_agent.split(" ")[-1]
         self.log_message(
-            "%s http://%s%s", self.command, self.headers["Host"], self.path
+            "%s: %s http://%s%s",
+            browser,
+            self.command,
+            self.headers["Host"],
+            self.path
         )
         if self.path == "/favicon.svg":
             return self._set_response(HTTPStatus.OK, FOLDER)
@@ -277,7 +291,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         htmldoc += f"<title>{title}</title>\n</head>"
         htmldoc += "<body>"
 
-        href = '<a href="/" class="home">/</a>'
+        href = '<a href="/" class="home" title="Home">/</a>'
         fpath = "/"
         for dir in path.split("/")[1:-1]:
             fpath += dir + "/"
@@ -290,7 +304,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         htmldoc += '<div class=header>'
         htmldoc += "<form name=search>"
         htmldoc += f"<input type=text name=search value='{search}' autofocus>"
-        htmldoc += '<input type=submit value="&nbsp;&nbsp;&nbsp;" class="search">'
+        htmldoc += '<input type=submit value="&nbsp;&nbsp;&nbsp;" class="search" alt="Search">'
         htmldoc += f"{href}\n</form>"
         htmldoc += "</div></div>"
         htmldoc += "<div class=list><ul>"
