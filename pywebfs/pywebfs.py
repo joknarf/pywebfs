@@ -176,6 +176,20 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(encoded)
 
+    def end_headers(self):
+        is_file = "?" not in self.path and not self.path.endswith("/")
+        # adds extra headers for some file types.
+        if is_file:
+            mimetype = self.guess_type(self.path)
+            self.log_message(mimetype)
+            if mimetype in ["text/plain"]:
+                self.send_header("Content-Disposition", "inline")
+            self.send_header("Content-Type", mimetype)
+            self.send_header("Cache-Control", "max-age=604800")
+        else:
+            self.send_header("Content-Type:", f"text/html; charset={ENC}")
+        super().end_headers()
+
     def find_files(self, search, path):
         """ find files recursively with name contains any word in search"""
         r = []
@@ -198,18 +212,6 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                         )
                     )
         return "\n".join(r)
-
-    def end_headers(self):
-        is_file = "?" not in self.path and not self.path.endswith("/")
-        # adds extra headers for some file types.
-        if is_file:
-            mimetype = self.guess_type(self.path)
-            self.log_message(mimetype)
-            if mimetype in ["text/plain"]:
-                self.send_header("Content-Disposition", "inline")
-            self.send_header("Content-Type", mimetype)
-            self.send_header("Cache-Control", "max-age=604800")
-        super().end_headers()
 
     def list_directory(self, path):
         """Helper to produce a directory listing (absent index.html).
