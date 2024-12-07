@@ -167,15 +167,11 @@ def accent_re(rexp):
 class HTTPFileHandler(SimpleHTTPRequestHandler):
     """Class handler for HTTP"""
 
-    def _set_response(self, status_code, data, content_type=None):
+    def _set_response(self, status_code, data):
         """build response"""
 
         self.send_response(status_code)
         encoded = data.encode(ENC, "surrogateescape")
-        if content_type:
-            self.send_header("Content-type", "%s; charset=%s" % (ENC, content_type))
-        else:
-            self.send_header("Content-type", "text/html; charset=%s" % ENC)
         self.send_header("Content-Length", str(len(encoded)))
         self.end_headers()
         self.wfile.write(encoded)
@@ -189,9 +185,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             try:
                 rexp.append(re.compile(accent_re(s), re.IGNORECASE))
             except:
-                err = 1
-        if err:
-            return "<li><b>Invalid regexp in search</b></li></ul></main></body></html>"
+                return "<li><b>Invalid regexp in search</b></li></ul></main></body></html>"
         for dirpath, dirnames, filenames in os.walk(path):
             for filename in filenames:
                 if all([bool(x.search(filename)) for x in rexp]):
@@ -205,6 +199,18 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                     )
         return "\n".join(r)
 
+    def end_headers(self):
+        is_file = "?" not in self.path and not self.path.endswith("/")
+        # adds extra headers for some file types.
+        if is_file:
+            mimetype = self.guess_type(self.path)
+            self.log_message(mimetype)
+            if mimetype in ["text/plain"]:
+                self.send_header("Content-Disposition", "inline")
+            self.send_header("Content-Type", mimetype)
+            self.send_header("Cache-Control", "max-age=604800")
+        super().end_headers()
+
     def list_directory(self, path):
         """Helper to produce a directory listing (absent index.html).
 
@@ -217,13 +223,13 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             list = os.listdir(path)
         except OSError:
             self.send_error(HTTPStatus.NOT_FOUND, "No permission to list directory")
-            return None
-        list.sort(key=lambda a: a.lower())
+            return ""
         r = []
         if path != "./":
             r.append(
                 f"<li><a href='{urllib.parse.quote(os.path.dirname(path[1:-1]), errors='surrogatepass')}' class='upfolder'>..</a></li>"
             )
+        list.sort(key=lambda a: a.lower())
         for name in list:
             fullname = os.path.join(path, name)
             displayname = linkname = name
@@ -243,26 +249,15 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             )
         return "\n".join(r)
 
-    def end_headers(self):
-        is_file = "?" not in self.path and not self.path.endswith("/")
-        # adds extra headers for some file types.
-        if is_file:
-            mimetype = self.guess_type(self.path)
-            if mimetype in ["text/plain"]:
-                self.send_header("Content-Type", "text/plain")
-                self.send_header("Content-Disposition", "inline")
-            self.send_header("Cache-Control", "max-age=604800")
-        super().end_headers()
-
     def do_GET(self):
         """do http calls"""
         self.log_message(
             "%s http://%s%s", self.command, self.headers["Host"], self.path
         )
         if self.path == "/favicon.svg":
-            return self._set_response(HTTPStatus.OK, FOLDER, "image/svg+xml")
+            return self._set_response(HTTPStatus.OK, FOLDER)
         elif self.path == "/style.css":
-            return self._set_response(HTTPStatus.OK, CSS, "text/css")
+            return self._set_response(HTTPStatus.OK, CSS)
         elif self.path == "/favicon.ico":
             return self._set_response(HTTPStatus.NOT_FOUND, "")
         p = urllib.parse.urlparse(self.path)
@@ -307,7 +302,11 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             htmldoc += self.list_directory("." + path) + enddoc
             self._set_response(HTTPStatus.OK, htmldoc)
         else:
-            super().do_GET()
+            try:
+                super().do_GET()
+            except ConnectionResetError:
+                pass
+
 
 
 class HTTPFileServer(ThreadingHTTPServer):
