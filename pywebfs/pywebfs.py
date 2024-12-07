@@ -187,7 +187,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             self.send_header("Content-Type", mimetype)
             self.send_header("Cache-Control", "max-age=604800")
         else:
-            self.send_header("Content-Type:", f"text/html; charset={ENC}")
+            self.send_header("Content-Type", f"text/html; charset={ENC}")
         super().end_headers()
 
     def find_files(self, search, path):
@@ -297,17 +297,18 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
 
         enddoc = "\n</ul>\n</div></body>\n</html>\n"
 
-        if p.query:
-            htmldoc += self.find_files(search, "." + path) + enddoc
-            self._set_response(HTTPStatus.OK, htmldoc)
-        elif displaypath.endswith("/"):
-            htmldoc += self.list_directory("." + path) + enddoc
-            self._set_response(HTTPStatus.OK, htmldoc)
-        else:
-            try:
+        try:
+            if p.query:
+                htmldoc += self.find_files(search, "." + path) + enddoc
+                self._set_response(HTTPStatus.OK, htmldoc)
+            elif displaypath.endswith("/"):
+                htmldoc += self.list_directory("." + path) + enddoc
+                self._set_response(HTTPStatus.OK, htmldoc)
+            else:
                 super().do_GET()
-            except ConnectionResetError:
-                pass
+        except ConnectionResetError:
+            pass
+
 
 
 
