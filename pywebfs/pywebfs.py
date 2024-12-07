@@ -480,13 +480,17 @@ def main():
     if args.gencert:
         hostname = args.gencert.pop(0)
         ips = args.gencert
-        (cert, key) = generate_selfsigned_cert(hostname, ips, None)
-        args.cert = args.cert or f"/tmp/{hostname}.crt"
-        args.key = args.key or f"/tmp/{hostname}.key"
-        with open(args.cert, "wb") as fd:
-            fd.write(cert)
-        with open(args.key, "wb") as fd:
-            fd.write(key)
+        certdir = os.path.expanduser("~/.pywebfs")
+        if not os.path.exists(certdir):
+            os.mkdir(certdir, mode=0o700)
+        args.cert = args.cert or f"{certdir}/{hostname}.crt"
+        args.key = args.key or f"{certdir}/{hostname}.key"
+        if not os.path.exists(args.cert):
+            (cert, key) = generate_selfsigned_cert(hostname, ips, None)
+            with open(args.cert, "wb") as fd:
+                fd.write(cert)
+            with open(args.key, "wb") as fd:
+                fd.write(key)
     prefix = "https" if args.cert else "http"
     print(f"Starting {prefix} server : {prefix}://{args.server}:{args.port}")
     server = HTTPFileServer(
