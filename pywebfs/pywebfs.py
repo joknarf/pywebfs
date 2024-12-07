@@ -8,6 +8,7 @@ import re
 import argparse
 import urllib
 import html
+import base64
 # python 3.6 no TheedingHTTPServer
 try: 
     from http.server import (
@@ -20,6 +21,7 @@ except:
         SimpleHTTPRequestHandler,
     )
 from http import HTTPStatus
+import ssl
 import urllib.parse
 
 
@@ -261,6 +263,17 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             )
         return "\n".join(r)
 
+    def do_HEAD(self):
+        self.send_response(200)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+
+    def do_AUTHHEAD(self):
+        self.send_response(401)
+        self.send_header("WWW-Authenticate", 'Basic realm="Test"')
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+
     def do_GET(self):
         """do http calls"""
         user_agent = self.headers.get("User-Agent") or ""
@@ -277,6 +290,17 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             self.headers["Host"],
             self.path
         )
+        if self.server._auth:
+            if self.headers.get("Authorization") == None:
+                self.do_AUTHHEAD()
+                self.wfile.write(b"no auth header received")
+                return
+            elif self.headers.get("Authorization") != "Basic " + self.server._auth:
+                self.do_AUTHHEAD()
+                self.wfile.write(self.headers.get("Authorization").encode())
+                self.wfile.write(b"not authenticated")
+                return
+
         if self.path == "/favicon.svg":
             return self._set_response(HTTPStatus.OK, FOLDER)
         elif self.path == "/style.css":
@@ -336,11 +360,24 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
 class HTTPFileServer(ThreadingHTTPServer):
     """HTTPServer with httpfile"""
 
-    def __init__(self, title, *args, **kwargs):
+    def __init__(self, title, certfiles, userp, *args, **kwargs):
         """add title property"""
         self.title = title
-        super().__init__(*args, **kwargs)
+        self._auth = None
+        if userp[0]:
+            self._auth = base64.b64encode(f"{userp[0]}:{userp[1]}".encode()).decode()
 
+        super().__init__(*args, **kwargs)
+        if certfiles[0]:
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            context.load_cert_chain(certfile=certfiles[0], keyfile=certfiles[1])
+            self.socket = context.wrap_socket(self.socket, server_side=True)
+            # self.socket = ssl.wrap_socket (
+            #     self.socket, 
+            #     certfile=certfiles[0],
+            #     keyfile=certfiles[1], 
+            #     server_side=True
+            # )
 
 def main():
     """start http server according to args"""
@@ -362,6 +399,10 @@ def main():
         nargs="?",
         help="Web html title",
     )
+    parser.add_argument("-c", "--cert", type=str, help="Path to https certificate")
+    parser.add_argument("-k", "--key", type=str, help="Path to https certificate key")
+    parser.add_argument("-u", "--user", type=str, help="username")
+    parser.add_argument("-P", "--password", type=str, help="password")
     parser.add_argument("-D", "--daemon", action="store_true", help="Start as a daemon")
     args = parser.parse_args()
     if os.path.isdir(args.dir):
@@ -375,7 +416,11 @@ def main():
         sys.exit(1)
 
     print(f"Starting http server : http://{args.server}:{args.port}")
-    server = HTTPFileServer(args.title, (args.server, args.port), HTTPFileHandler)
+    server = HTTPFileServer(
+        args.title, 
+        (args.cert, args.key),
+        (args.user, args.password),
+        (args.server, args.port), HTTPFileHandler)
 
     if args.daemon:
         import daemon
