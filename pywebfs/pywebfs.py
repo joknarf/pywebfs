@@ -8,10 +8,17 @@ import re
 import argparse
 import urllib
 import html
-from http.server import (
-    ThreadingHTTPServer,
-    SimpleHTTPRequestHandler,
-)
+# python 3.6 no TheedingHTTPServer
+try: 
+    from http.server import (
+        ThreadingHTTPServer,
+        SimpleHTTPRequestHandler,
+    )
+except:
+    from http.server import (
+        HTTPServer as ThreadingHTTPServer,
+        SimpleHTTPRequestHandler,
+    )
 from http import HTTPStatus
 import urllib.parse
 
