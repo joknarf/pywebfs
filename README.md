@@ -5,7 +5,7 @@
 [![Python versions](https://img.shields.io/badge/python-3.6+-blue.svg)](https://shields.io/)
 
 # pywebfs
-Simple Python HTTP File Server
+Simple Python HTTP(S) File Server
 
 # Quick start
 ```
@@ -14,3 +14,20 @@ $ pywebfs -d /mydir -t "my fileserver" -s 0.0.0.0 -p 8080
 Browse/Download/Search files using browser `http://<yourserver>:8080`
 
 ![image](https://github.com/user-attachments/assets/ebb9957f-5a10-4e71-8db7-ee19dd9ecc7e)
+
+# basic auth
+```
+$ pywebfs -d /mydir -u myuser -P mypass
+```
+
+# https server
+
+* Generate auto-signed certificate and start https server
+```
+$ pywebfs -d /mydir -g myserver 192.169.1.11
+```
+
+* Start https server using existing certificate
+```
+$ pywebfs -d /mydir -c /pathto/host.cert -k /pathto/host.key
+```
