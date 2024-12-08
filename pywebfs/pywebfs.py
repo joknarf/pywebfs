@@ -68,11 +68,11 @@ CSS = f"""
         text-align: left;
         font-weight: unset;
         color: #5c5c5c;
-        white-space: nowrap;
     }}
     td, th {{
         vertical-align: top;
         padding-right: 25px;
+        white-space: nowrap;
     }}
     .size {{
         text-align: right;
@@ -112,11 +112,17 @@ CSS = f"""
         padding: 10px 20px;
         margin: 0;
     }}
-    form {{ display: inline; }}
+    form {{
+        display: inline;
+    }}
     svg {{
         width: 16px;
         height: 16px;
         padding-right: 5px;
+    }}
+    .path {{
+        /*font-family: verdana, helvetica, arial, sans-serif;*/
+        vertical-align: middle;
     }}
     input, button {{
         display: inline-block;
@@ -338,12 +344,12 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             pass
 
     def end_headers(self):
-        is_file = "?" not in self.path and not self.path.endswith("/")
-        # adds extra headers for some file types.
-        if is_file:
+        fpath = fs_path("." + self.path)
+        is_dl = "?" not in self.path and not os.path.isdir(fpath)
+        # adds extra headers to download/display file types.
+        if is_dl:
             mimetype = self.guess_type(self.path)
-            if mimetype == "application/octet-stream" and is_binary_file(fs_path("." + self.path)) == False:
-                #self.log_message(self.path + ": TEXT!")
+            if mimetype == "application/octet-stream" and is_binary_file(fpath) == False:
                 mimetype = "text/plain"
             self.log_message(mimetype)
             if mimetype in ["text/plain"]:
@@ -362,26 +368,29 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
 
     def find_files(self, search, path):
         """ find files recursively with name contains any word in search"""
-        r = []
         rexp = []
-        err = 0
         for s in search.split():
             try:
                 rexp.append(re.compile(accent_re(s), re.IGNORECASE))
             except:
                 rexp.append(re.compile(accent_re(re.escape(s))))
+        self.write_html('<table>\n<tr><th>Name</th><th class="size">Size</th><th>Modified</th><th style=width:100%></th></tr>')
         for dirpath, dirnames, filenames in os.walk(path):
             for filename in filenames:
                 if all([bool(x.search(filename)) for x in rexp]):
-                    fpath = os.path.join(dirpath, filename).replace("\\", "/")[1:]
-                    r.append(
-                        '<li><a href="%s" class="file">%s</a></li>'
+                    fpath = os.path.join(dirpath, filename)
+                    stat = os.stat(fpath)
+                    self.write_html(
+                        '<tr><td><li><a href="%s" class="file">%s</a></li></td><td class="size">%s</td><td>%s</td><td></td></tr>'
                         % (
-                            urllib.parse.quote(fpath, errors="surrogatepass"),
+                            urllib.parse.quote(fpath.replace("\\", "/"), errors="surrogatepass"),
                             html.escape(filename, quote=False),
+                            convert_size(stat.st_size),
+                            datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
                         )
                     )
-        return "\n".join(r)
+        self.write_html("</table>")
+
 
     def search_files(self, search, path):
         """ find files recursively containing search pattern"""
@@ -390,7 +399,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             rex = re.compile(accent_re(search), re.IGNORECASE)
         except:
             rex = re.compile(accent_re(re.escape(search)), re.IGNORECASE)
-        r = ['<table class="searchresult">']
+        self.write_html('<table class="searchresult">\n<th>Name</th><th>Text</th><th style=width:100%></th></tr>')
         for dirpath, dirnames, filenames in os.walk(path):
             for filename in filenames:
                 fpath = os.path.join(dirpath, filename)
@@ -398,10 +407,11 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 if found:
                     fpath = fpath.replace("\\", "/")[1:]
                     urlpath = urllib.parse.quote(fpath, errors="surrogatepass")
-                    r.append('''
+                    self.write_html('''
                         <tr>
                             <td><li><a href="%s" class="file" title="%s">%s</a></li></td>
                             <td><pre>%s</pre></td>
+                            <td></td>
                         </tr>
                         '''
                         % (
@@ -411,8 +421,15 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                             html.escape("\n".join(found))
                         )
                     )
-        r.append('</table>')
-        return "\n".join(r)
+        self.write_html('</table>')
+    
+
+    def write_html(self, data):
+        encoded = data.encode(ENC, "surrogateescape")
+        try: 
+            self.wfile.write(encoded)
+        except:
+            pass
 
 
     def list_directory(self, path):
@@ -428,14 +445,16 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         except OSError:
             self.send_error(HTTPStatus.NOT_FOUND, "No permission to list directory")
             return ""
-        r = ["<table>"]
-        r.append('<tr><th>Name</th><th class="size">Size</th><th>Modified</th></tr>')
+        self.write_html('<table>\n<tr><th>Name</th><th class="size">Size</th><th>Modified</th><th style=width:100%></th></tr>')
         if path != "./":
-            stat = os.stat(path + "/..")
-            r.append(
-                '<tr><td><li><a href="%s" class="upfolder">..</a></li></td><td class="size">%s</td><td>%s</td></tr>'
+            parentdir = os.path.dirname(path[1:].rstrip("/"))
+            stat = os.stat("."+parentdir)
+            if parentdir != "/":
+                parentdir += "/"
+            self.write_html(
+                '<tr><td><li><a href="%s" class="upfolder">..</a></li></td><td class="size">%s</td><td>%s</td><td></td></tr>'
                 % (
-                    urllib.parse.quote(os.path.dirname(path[1:-1]), errors='surrogatepass'),
+                    urllib.parse.quote(parentdir , errors='surrogatepass'),
                     convert_size(stat.st_size),
                     datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
                 )
@@ -451,11 +470,8 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             if os.path.islink(fullname):
                 img = "link"
             stat = os.stat(fullname)
-            self.log_message(str(stat))
-            self.log_message(datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"))
-
-            r.append(
-                '<tr><td><li><a href="%s" class="%s">%s</a></li></td><td class="size">%s</td><td>%s</td></tr>'
+            self.write_html(
+                '<tr><td><li><a href="%s" class="%s">%s</a></li></td><td class="size">%s</td><td>%s</td><td></td></tr>'
                 % (
                     urllib.parse.quote(linkname, errors="surrogatepass"),
                     img,
@@ -464,8 +480,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                     datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
                 )
             )
-        r.append("</table>")
-        return "\n".join(r)
+        self.write_html("</table>")
 
     def do_HEAD(self):
         self.send_response(HTTPStatus.OK)
@@ -517,6 +532,9 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         searchtxt = q.get("searchtxt", [""])[0]
         path = displaypath = fs_path(p.path)
         displaypath = html.escape(displaypath, quote=False)
+        if not os.path.isdir("."+path):
+            return super().do_GET()
+
         title = f"{self.server.title} - {displaypath}"
         htmldoc = HTML
         htmldoc += f"<title>{title}</title>\n</head>"
@@ -524,9 +542,9 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
 
         href = '<a href="/" class="home" title="Home">/</a>'
         fpath = "/"
-        for dir in path.split("/")[1:-1]:
+        for dir in path.rstrip("/").split("/")[1:]:
             fpath += dir + "/"
-            href += '<a href="%s">%s</a>/' % (
+            href += '<a href="%s" class="path">%s/</a>' % (
                 urllib.parse.quote(fpath, errors="surrogatepass"),
                 html.escape(dir, quote=False),
             )
@@ -543,18 +561,19 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
 
         enddoc = "\n</ul>\n</div></body>\n</html>\n"
 
+        self.send_response(HTTPStatus.OK)
+        self.end_headers()
+
+        self.write_html(htmldoc)
+
         if p.query:
             if searchtxt:
-                htmldoc += self.search_files(search, "." + path) + enddoc
-                self._set_response(HTTPStatus.OK, htmldoc)
+                self.search_files(search, "." + path)
             else:
-                htmldoc += self.find_files(search, "." + path) + enddoc
-                self._set_response(HTTPStatus.OK, htmldoc)
-        elif displaypath.endswith("/"):
-            htmldoc += self.list_directory("." + path) + enddoc
-            self._set_response(HTTPStatus.OK, htmldoc)
+                self.find_files(search, "." + path)
         else:
-            super().do_GET()
+            self.list_directory("." + path)
+        self.write_html(enddoc)
 
     def devnull(self):
         self.send_error(HTTPStatus.BAD_REQUEST, "Unsupported method")
