@@ -54,6 +54,12 @@ CSS = f"""
         -moz-box-sizing: border-box;
         box-sizing: border-box;
     }}
+    pre {{
+        margin: 0;
+    }}
+    td {{
+        vertical-align: top;
+    }}
     .header {{
         background-color: #aaa;
         z-index: 2;
@@ -345,25 +351,33 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
 
     def search_files(self, search, path):
         """ find files recursively containing search pattern"""
-        r = []
+        
         try:
             rex = re.compile(accent_re(search), re.IGNORECASE)
         except:
-            return "<li><b>Invalid regexp in search</b></li></ul></main></body></html>"
+            rex = re.compile(accent_re(re.escape(search)), re.IGNORECASE)
+        r = ["<table width=100% class=searcht>"]
         for dirpath, dirnames, filenames in os.walk(path):
             for filename in filenames:
                 fpath = os.path.join(dirpath, filename)
-                if grep(rex, fpath, first=True):
+                found = grep(rex, fpath, first=False)
+                if found:
                     fpath = fpath.replace("\\", "/")[1:]
                     urlpath = urllib.parse.quote(fpath, errors="surrogatepass")
-                    r.append(
-                        '<li><a href="%s" class="file" title="%s">%s</a></li>'
+                    r.append('''
+                        <tr>
+                            <td><li><a href="%s" class="file" title="%s">%s</a></li></td>
+                            <td><pre>%s</pre></td>
+                        </tr>
+                        '''
                         % (
                             urlpath,
                             urlpath,
                             html.escape(filename, quote=False),
+                            html.escape("\n".join(found))
                         )
                     )
+        r.append('</table>')
         return "\n".join(r)
 
 
