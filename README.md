@@ -17,17 +17,21 @@ Browse/Download/Search files using browser `http://<yourserver>:8080`
 
 # basic auth
 ```
-$ pywebfs -d /mydir -u myuser -P mypass
+$ pywebfs --dir /mydir --user myuser [--password mypass]
+$ pywebfs -d /mydir -u myuser [-P mypass]
 ```
+Generated password is given if no `--pasword` option
 
 # https server
 
 * Generate auto-signed certificate and start https server
 ```
-$ pywebfs -d /mydir -g myserver 192.169.1.11
+$ pywebfs --dir /mydir --gencert myserver 192.169.1.11
+$ pywebfs -d /mydir --g myserver 192.169.1.11
 ```
 
 * Start https server using existing certificate
 ```
+$ pywebfs --dir /mydir --cert /pathto/host.cert --key /pathto/host.key
 $ pywebfs -d /mydir -c /pathto/host.cert -k /pathto/host.key
 ```
