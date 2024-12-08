@@ -56,6 +56,13 @@ CSS = f"""
     }}
     pre {{
         margin: 0;
+        line-height: 105%
+    }}
+    tr:nth-of-type(even) {{
+        background-color: #e3e3f3;
+    }}
+    tr:hover {{
+        background-color: #ccf;
     }}
     td {{
         vertical-align: top;
@@ -85,6 +92,7 @@ CSS = f"""
         background-color: #F3F4FF;
         border-radius: 0px 10px 10px 10px;
         z-index: 3;
+        display: table;
     }}
     a {{ text-decoration: none; }}
     ul {{ 
@@ -149,7 +157,9 @@ CSS = f"""
         background-size: 16px 16px;
         background-position-y: 4px;
     }}
-
+    table {{
+        width: 100%;
+    }}
     @media screen and (max-device-width: 480px){{
         body {{
             -webkit-text-size-adjust: 180%;
@@ -356,7 +366,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             rex = re.compile(accent_re(search), re.IGNORECASE)
         except:
             rex = re.compile(accent_re(re.escape(search)), re.IGNORECASE)
-        r = ["<table width=100% class=searcht>"]
+        r = ['<table class="searchresult">']
         for dirpath, dirnames, filenames in os.walk(path):
             for filename in filenames:
                 fpath = os.path.join(dirpath, filename)
