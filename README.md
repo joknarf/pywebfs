@@ -11,9 +11,11 @@ Simple Python HTTP(S) File Server
 ```
 $ pywebfs -d /mydir -t "my fileserver" -s 0.0.0.0 -p 8080
 ```
-Browse/Download/Search files using browser `http://<yourserver>:8080`
-
+* Browse/Download/Search files using browser `http://<yourserver>:8080`
 ![image](https://github.com/user-attachments/assets/ebb9957f-5a10-4e71-8db7-ee19dd9ecc7e)
+
+* search text in files (grep)
+![image](https://github.com/user-attachments/assets/44134bfb-7e73-46c9-9bee-59fff376e345)
 
 # basic auth
 ```
