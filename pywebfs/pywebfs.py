@@ -120,10 +120,6 @@ CSS = f"""
         height: 16px;
         padding-right: 5px;
     }}
-    .path {{
-        /*font-family: verdana, helvetica, arial, sans-serif;*/
-        vertical-align: middle;
-    }}
     input, button {{
         display: inline-block;
         margin-right: 10px;
@@ -146,6 +142,11 @@ CSS = f"""
         background-position-y: center;
         cursor:pointer;
     }}
+    .path {{
+        vertical-align: middle;
+        color: #000;
+    }}
+
     .home {{
         display: inline-block;
         text-indent: 25px;
@@ -467,11 +468,11 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             fullname = os.path.join(path, name)
             displayname = linkname = name
             stat = os.stat(fullname)
-            if os.path.isdir(fullname):
+            if os.path.islink(fullname):
+                img = "link"
+            elif os.path.isdir(fullname):
                 linkname = name + "/"
                 img = "folder"
-            elif os.path.islink(fullname):
-                img = "link"
             else:
                 img = "file"
                 nbfiles += 1
