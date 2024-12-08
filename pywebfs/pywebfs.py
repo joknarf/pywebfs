@@ -329,7 +329,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             try:
                 rexp.append(re.compile(accent_re(s), re.IGNORECASE))
             except:
-                return "<li><b>Invalid regexp in search</b></li></ul></main></body></html>"
+                rexp.append(re.compile(accent_re(re.escape(s))))
         for dirpath, dirnames, filenames in os.walk(path):
             for filename in filenames:
                 if all([bool(x.search(filename)) for x in rexp]):
