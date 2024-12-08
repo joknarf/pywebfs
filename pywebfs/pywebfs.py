@@ -344,10 +344,13 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             pass
 
     def end_headers(self):
-        fpath = fs_path("." + self.path)
-        is_dl = "?" not in self.path and not os.path.isdir(fpath)
+        p = urllib.parse.urlparse(self.path)
+        fpath = fs_path("." + p.path)
+        is_html = p.query or os.path.isdir(fpath)
         # adds extra headers to download/display file types.
-        if is_dl:
+        if is_html:
+            self.send_header("Content-Type", f"text/html; charset={ENC}")
+        else:
             mimetype = self.guess_type(self.path)
             if mimetype == "application/octet-stream" and is_binary_file(fpath) == False:
                 mimetype = "text/plain"
@@ -361,8 +364,6 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
                 self.send_header("Pragma", "no-cache")
                 self.send_header("Expires", "0")
-        else:
-            self.send_header("Content-Type", f"text/html; charset={ENC}")
         super().end_headers()
 
 
@@ -460,16 +461,21 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 )
             )
         list.sort(key=lambda a: a.lower())
+        nbfiles = 0
+        size = 0
         for name in list:
             fullname = os.path.join(path, name)
             displayname = linkname = name
-            img = "file"
+            stat = os.stat(fullname)
             if os.path.isdir(fullname):
                 linkname = name + "/"
                 img = "folder"
-            if os.path.islink(fullname):
+            elif os.path.islink(fullname):
                 img = "link"
-            stat = os.stat(fullname)
+            else:
+                img = "file"
+                nbfiles += 1
+                size += stat.st_size
             self.write_html(
                 '<tr><td><li><a href="%s" class="%s">%s</a></li></td><td class="size">%s</td><td>%s</td><td></td></tr>'
                 % (
@@ -481,6 +487,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 )
             )
         self.write_html("</table>")
+        self.write_html(f'<p>{nbfiles} files - {convert_size(size)}</p>')
 
     def do_HEAD(self):
         self.send_response(HTTPStatus.OK)
