@@ -46,7 +46,7 @@ CSS = f"""
     body {{
         padding: 0px;
         background-color: #333;
-        font-family: verdana, helvetica, arial, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;;
         font-size: 1em;
     }}
     div {{
@@ -64,8 +64,19 @@ CSS = f"""
     tr:hover {{
         background-color: #ccf;
     }}
-    td {{
+    th {{
+        text-align: left;
+        font-weight: unset;
+        color: #5c5c5c;
+        white-space: nowrap;
+    }}
+    td, th {{
         vertical-align: top;
+        padding-right: 25px;
+    }}
+    .size {{
+        text-align: right;
+        font-variant-numeric: tabular-nums;
     }}
     .header {{
         background-color: #aaa;
@@ -158,7 +169,7 @@ CSS = f"""
         background-position-y: 4px;
     }}
     table {{
-        width: 100%;
+        border-spacing: 0;
     }}
     @media screen and (max-device-width: 480px){{
         body {{
@@ -204,6 +215,19 @@ def fs_path(path):
         return urllib.parse.unquote(path, errors="surrogatepass")
     except UnicodeDecodeError:
         return urllib.parse.unquote(path)
+
+def convert_size(size_bytes):
+    if size_bytes == 0:
+        return "0 B"
+
+    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+    i = 0
+    double_size = float(size_bytes)
+    while double_size >= 1000 and i < len(size_name) - 1:
+        double_size /= 1000.0
+        i += 1
+
+    return f"{double_size:.2f} {size_name[i]}"
 
 
 def is_binary_file(path):
@@ -404,10 +428,17 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         except OSError:
             self.send_error(HTTPStatus.NOT_FOUND, "No permission to list directory")
             return ""
-        r = []
+        r = ["<table>"]
+        r.append('<tr><th>Name</th><th class="size">Size</th><th>Modified</th></tr>')
         if path != "./":
+            stat = os.stat(path + "/..")
             r.append(
-                f"<li><a href='{urllib.parse.quote(os.path.dirname(path[1:-1]), errors='surrogatepass')}' class='upfolder'>..</a></li>"
+                '<tr><td><li><a href="%s" class="upfolder">..</a></li></td><td class="size">%s</td><td>%s</td></tr>'
+                % (
+                    urllib.parse.quote(os.path.dirname(path[1:-1]), errors='surrogatepass'),
+                    convert_size(stat.st_size),
+                    datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+                )
             )
         list.sort(key=lambda a: a.lower())
         for name in list:
@@ -419,14 +450,21 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 img = "folder"
             if os.path.islink(fullname):
                 img = "link"
+            stat = os.stat(fullname)
+            self.log_message(str(stat))
+            self.log_message(datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"))
+
             r.append(
-                '<li><a href="%s" class="%s">%s</a></li>'
+                '<tr><td><li><a href="%s" class="%s">%s</a></li></td><td class="size">%s</td><td>%s</td></tr>'
                 % (
                     urllib.parse.quote(linkname, errors="surrogatepass"),
                     img,
                     html.escape(displayname, quote=False),
+                    convert_size(stat.st_size),
+                    datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
                 )
             )
+        r.append("</table>")
         return "\n".join(r)
 
     def do_HEAD(self):
