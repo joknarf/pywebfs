@@ -376,12 +376,16 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 rexp.append(re.compile(accent_re(s), re.IGNORECASE))
             except:
                 rexp.append(re.compile(accent_re(re.escape(s))))
-        self.write_html('<table>\n<tr><th>Name</th><th class="size">Size</th><th>Modified</th><th style=width:100%></th></tr>')
+        self.write_html('<table>\n<tr><th id="filename">Name</th><th class="size">Size</th><th>Modified</th><th style=width:100%></th></tr>')
+        nbfiles = 0
+        size = 0
         for dirpath, dirnames, filenames in os.walk(path):
             for filename in filenames:
                 if all([bool(x.search(filename)) for x in rexp]):
                     fpath = os.path.join(dirpath, filename)
                     stat = os.stat(fpath)
+                    nbfiles += 1
+                    size += stat.st_size
                     self.write_html(
                         '<tr><td><li><a href="%s" class="file">%s</a></li></td><td class="size">%s</td><td>%s</td><td></td></tr>'
                         % (
@@ -392,6 +396,9 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                         )
                     )
         self.write_html("</table>")
+        s = "s" if nbfiles>1 else ""            
+        self.write_html(f'<p id="info">{nbfiles} file{s} - {convert_size(size)}</p>')
+
 
 
     def search_files(self, search, path):
@@ -401,7 +408,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             rex = re.compile(accent_re(search), re.IGNORECASE)
         except:
             rex = re.compile(accent_re(re.escape(search)), re.IGNORECASE)
-        self.write_html('<table class="searchresult">\n<th>Name</th><th>Text</th><th style=width:100%></th></tr>')
+        self.write_html('<table class="searchresult">\n<th id="filename">Name</th><th>Text</th><th style=width:100%></th></tr>')
         for dirpath, dirnames, filenames in os.walk(path):
             for filename in filenames:
                 fpath = os.path.join(dirpath, filename)
@@ -447,7 +454,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         except OSError:
             self.send_error(HTTPStatus.NOT_FOUND, "No permission to list directory")
             return ""
-        self.write_html('<table>\n<tr><th>Name</th><th class="size">Size</th><th>Modified</th><th style=width:100%></th></tr>')
+        self.write_html('<table>\n<tr><th id="filename">Name</th><th class="size">Size</th><th>Modified</th><th style=width:100%></th></tr>')
         if path != "./":
             parentdir = os.path.dirname(path[1:].rstrip("/"))
             stat = os.stat("."+parentdir)
@@ -470,6 +477,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             stat = os.stat(fullname)
             if os.path.islink(fullname):
                 img = "link"
+                linkname = name + "/"
             elif os.path.isdir(fullname):
                 linkname = name + "/"
                 img = "folder"
@@ -488,7 +496,8 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 )
             )
         self.write_html("</table>")
-        self.write_html(f'<p>{nbfiles} files - {convert_size(size)}</p>')
+        s = "s" if nbfiles>1 else ""            
+        self.write_html(f'<p id="info">{nbfiles} file{s} - {convert_size(size)}</p>')
 
     def do_HEAD(self):
         self.send_response(HTTPStatus.OK)
@@ -567,7 +576,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         htmldoc += "</div></div>"
         htmldoc += "<div class=list><ul>"
 
-        enddoc = "\n</ul>\n</div></body>\n</html>\n"
+        enddoc = "\n</ul>\n</div>"
 
         self.send_response(HTTPStatus.OK)
         self.end_headers()
@@ -582,6 +591,8 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         else:
             self.list_directory("." + path)
         self.write_html(enddoc)
+        self.write_html('<script>document.getElementById("filename").innerHTML="Name - "+document.getElementById("info").innerHTML;</script>')
+        self.write_html('</body>\n</html>\n')
 
     def devnull(self):
         self.send_error(HTTPStatus.BAD_REQUEST, "Unsupported method")
