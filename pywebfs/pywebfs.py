@@ -23,7 +23,7 @@ except:
 from http import HTTPStatus
 import ssl
 import urllib.parse
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 import ipaddress
 import secrets
 
@@ -178,6 +178,23 @@ CSS = f"""
     table {{
         border-spacing: 0;
     }}
+    .found {{
+        background: #bfc;
+    }}
+    #info {{
+        visibility: hidden;
+        position: absolute;
+    }}
+    th.name {{
+        min-width: 400px;
+    }}
+    div.name {{
+        float: left;
+    }}
+    .info {{
+        float: right;
+        font-size: 0.8em;
+    }}
     @media screen and (max-device-width: 480px){{
         body {{
             -webkit-text-size-adjust: 180%;
@@ -225,16 +242,16 @@ def fs_path(path):
 
 def convert_size(size_bytes):
     if size_bytes == 0:
-        return "0 B"
+        return "0&nbsp;&nbsp;B"
 
-    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+    size_name = ("&nbsp;B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
     i = 0
     double_size = float(size_bytes)
     while double_size >= 1000 and i < len(size_name) - 1:
         double_size /= 1000.0
         i += 1
 
-    return f"{double_size:.2f} {size_name[i]}"
+    return f"{round(double_size,1)}&nbsp;{size_name[i]}"
 
 
 def is_binary_file(path):
@@ -248,18 +265,29 @@ def is_binary_file(path):
 def grep(rex, path, first=False):
     if is_binary_file(path):
         return []
-    found = []
+    founds = []
     with open(path, "r") as fd:
         try:
             for line in fd:
                 line = line.rstrip("\r\n").rstrip("\n")
-                if rex.search(line):
-                    found.append(line)
+                found = rex.search(line)
+                if found:
+                    print(str(found), file=sys.stderr)
+                    #spans = [m.span() for m in rex.finditer(line)]
+                    #spans.reverse()
+                    newline = ""
+                    prevspan = 0
+                    for m in rex.finditer(line):
+                        span = m.span()
+                        newline += html.escape(line[prevspan:span[0]]) + '<span class="found">' + html.escape(line[span[0]:span[1]]) + "</span>"
+                        prevspan = span[1]
+                    newline += html.escape(line[prevspan:])
+                    founds.append(newline)
                     if first:
-                        return found
+                        return founds
         except:
             pass
-    return found
+    return founds
 
 def generate_selfsigned_cert(hostname, ip_addresses=None, key=None):
     """Generates self signed certificate for a hostname, and optional IP addresses.
@@ -300,7 +328,7 @@ def generate_selfsigned_cert(hostname, ip_addresses=None, key=None):
     
     # path_len=0 means this cert can only sign itself, not other certs.
     basic_contraints = x509.BasicConstraints(ca=True, path_length=0)
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     cert = (
         x509.CertificateBuilder()
         .subject_name(name)
@@ -376,9 +404,10 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 rexp.append(re.compile(accent_re(s), re.IGNORECASE))
             except:
                 rexp.append(re.compile(accent_re(re.escape(s))))
-        self.write_html('<table>\n<tr><th id="filename">Name</th><th class="size">Size</th><th>Modified</th><th style=width:100%></th></tr>')
+        self.write_html('<table>\n<tr><th class="name"><div class="name">Name</div><div class="info" id="nameinfo"></div></th><th class="size">Size</th><th>Modified</th><th style=width:100%></th></tr>')
         nbfiles = 0
         size = 0
+        self.log_message(path)
         for dirpath, dirnames, filenames in os.walk(path):
             for filename in filenames:
                 if all([bool(x.search(filename)) for x in rexp]):
@@ -389,7 +418,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                     self.write_html(
                         '<tr><td><li><a href="%s" class="file">%s</a></li></td><td class="size">%s</td><td>%s</td><td></td></tr>'
                         % (
-                            urllib.parse.quote(fpath.replace("\\", "/"), errors="surrogatepass"),
+                            urllib.parse.quote(fpath[1:].replace("\\", "/"), errors="surrogatepass"),
                             html.escape(filename, quote=False),
                             convert_size(stat.st_size),
                             datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
@@ -399,8 +428,6 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         s = "s" if nbfiles>1 else ""            
         self.write_html(f'<p id="info">{nbfiles} file{s} - {convert_size(size)}</p>')
 
-
-
     def search_files(self, search, path):
         """ find files recursively containing search pattern"""
         
@@ -408,12 +435,14 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             rex = re.compile(accent_re(search), re.IGNORECASE)
         except:
             rex = re.compile(accent_re(re.escape(search)), re.IGNORECASE)
-        self.write_html('<table class="searchresult">\n<th id="filename">Name</th><th>Text</th><th style=width:100%></th></tr>')
+        self.write_html('<table class="searchresult">\n<th class="name"><div class="name">Name</div><div class="info" id="nameinfo"></div></th><th>Text</th><th style=width:100%></th></tr>')
+        nbfiles = 0
         for dirpath, dirnames, filenames in os.walk(path):
             for filename in filenames:
                 fpath = os.path.join(dirpath, filename)
                 found = grep(rex, fpath, first=False)
                 if found:
+                    nbfiles += 1
                     fpath = fpath.replace("\\", "/")[1:]
                     urlpath = urllib.parse.quote(fpath, errors="surrogatepass")
                     self.write_html('''
@@ -427,12 +456,13 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                             urlpath,
                             urlpath,
                             html.escape(filename, quote=False),
-                            html.escape("\n".join(found))
+                            "\n".join(found)
                         )
                     )
         self.write_html('</table>')
+        s = "s" if nbfiles>1 else ""
+        self.write_html(f'<p id="info">{nbfiles} file{s}</p>')
     
-
     def write_html(self, data):
         encoded = data.encode(ENC, "surrogateescape")
         try: 
@@ -454,7 +484,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         except OSError:
             self.send_error(HTTPStatus.NOT_FOUND, "No permission to list directory")
             return ""
-        self.write_html('<table>\n<tr><th id="filename">Name</th><th class="size">Size</th><th>Modified</th><th style=width:100%></th></tr>')
+        self.write_html('<table>\n<tr><th class="name"><div class="name">Name</div><div class="info" id="nameinfo"></div></th><th class="size">Size</th><th>Modified</th><th style=width:100%></th></tr>')
         if path != "./":
             parentdir = os.path.dirname(path[1:].rstrip("/"))
             stat = os.stat("."+parentdir)
@@ -591,7 +621,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         else:
             self.list_directory("." + path)
         self.write_html(enddoc)
-        self.write_html('<script>document.getElementById("filename").innerHTML="Name - "+document.getElementById("info").innerHTML;</script>')
+        self.write_html('<script>document.getElementById("nameinfo").innerHTML=document.getElementById("info").innerHTML;</script>')
         self.write_html('</body>\n</html>\n')
 
     def devnull(self):
