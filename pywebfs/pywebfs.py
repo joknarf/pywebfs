@@ -524,7 +524,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 img = "file"
                 nbfiles += 1
                 size += stat.st_size
-            size_unit = convert_size(size)
+            size_unit = convert_size(stat.st_size)
             self.write_html(
                 '<tr><td><li><a href="%s" class="%s">%s</a></li></td><td>%s</td><td>%s</td><td>%s</td><td></td></tr>'
                 % (
