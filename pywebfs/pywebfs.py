@@ -71,13 +71,23 @@ CSS = f"""
     }}
     td, th {{
         vertical-align: top;
-        padding-right: 25px;
+        padding-right: 20px;
         white-space: nowrap;
     }}
-    .size {{
-        text-align: right;
-        font-variant-numeric: tabular-nums;
+    th.size {{
+        text-align: center;
     }}
+    /* size num */
+    #files tr td:nth-child(2) {{
+        font-variant-numeric: tabular-nums;
+        padding-right: 5px;
+        text-align: right;
+    }}
+    /* date */
+    #files tr td:nth-child(4) {{
+        font-variant-numeric: tabular-nums;    
+    }}
+
     .header {{
         background-color: #aaa;
         z-index: 2;
@@ -242,16 +252,16 @@ def fs_path(path):
 
 def convert_size(size_bytes):
     if size_bytes == 0:
-        return "0&nbsp;&nbsp;B"
+        return ("0","B")
 
-    size_name = ("&nbsp;B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
     i = 0
     double_size = float(size_bytes)
     while double_size >= 1000 and i < len(size_name) - 1:
         double_size /= 1000.0
         i += 1
 
-    return f"{round(double_size,1)}&nbsp;{size_name[i]}"
+    return (str(round(double_size,1)), size_name[i])
 
 
 def is_binary_file(path):
@@ -272,9 +282,6 @@ def grep(rex, path, first=False):
                 line = line.rstrip("\r\n").rstrip("\n")
                 found = rex.search(line)
                 if found:
-                    print(str(found), file=sys.stderr)
-                    #spans = [m.span() for m in rex.finditer(line)]
-                    #spans.reverse()
                     newline = ""
                     prevspan = 0
                     for m in rex.finditer(line):
@@ -404,7 +411,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 rexp.append(re.compile(accent_re(s), re.IGNORECASE))
             except:
                 rexp.append(re.compile(accent_re(re.escape(s))))
-        self.write_html('<table>\n<tr><th class="name"><div class="name">Name</div><div class="info" id="nameinfo"></div></th><th class="size">Size</th><th>Modified</th><th style=width:100%></th></tr>')
+        self.write_html('<table id="files">\n<tr><th class="name"><div class="name">Name</div><div class="info" id="nameinfo"></div></th><th class="size" colspan=2>Size</th><th>Modified</th><th style=width:100%></th></tr>')
         nbfiles = 0
         size = 0
         self.log_message(path)
@@ -415,18 +422,19 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                     stat = os.stat(fpath)
                     nbfiles += 1
                     size += stat.st_size
+                    size_unit = convert_size(stat.st_size)
                     self.write_html(
-                        '<tr><td><li><a href="%s" class="file">%s</a></li></td><td class="size">%s</td><td>%s</td><td></td></tr>'
+                        '<tr><td><li><a href="%s" class="file">%s</a></li></td><td>%s</td><td>%s</td><td>%s</td><td></td></tr>'
                         % (
                             urllib.parse.quote(fpath[1:].replace("\\", "/"), errors="surrogatepass"),
                             html.escape(filename, quote=False),
-                            convert_size(stat.st_size),
+                            size_unit[0], size_unit[1],
                             datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
                         )
                     )
         self.write_html("</table>")
         s = "s" if nbfiles>1 else ""            
-        self.write_html(f'<p id="info">{nbfiles} file{s} - {convert_size(size)}</p>')
+        self.write_html(f'<p id="info">{nbfiles} file{s} - {" ".join(convert_size(size))}</p>')
 
     def search_files(self, search, path):
         """ find files recursively containing search pattern"""
@@ -484,17 +492,18 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         except OSError:
             self.send_error(HTTPStatus.NOT_FOUND, "No permission to list directory")
             return ""
-        self.write_html('<table>\n<tr><th class="name"><div class="name">Name</div><div class="info" id="nameinfo"></div></th><th class="size">Size</th><th>Modified</th><th style=width:100%></th></tr>')
+        self.write_html('<table id="files">\n<thead><tr><th class="name"><div class="name">Name</div><div class="info" id="nameinfo"></div></th><th class="size" colspan=2>Size</th><th>Modified</th><th style=width:100%></th></tr></thead><tbody>')
         if path != "./":
             parentdir = os.path.dirname(path[1:].rstrip("/"))
             stat = os.stat("."+parentdir)
             if parentdir != "/":
                 parentdir += "/"
+            size_unit = convert_size(stat.st_size)
             self.write_html(
-                '<tr><td><li><a href="%s" class="upfolder">..</a></li></td><td class="size">%s</td><td>%s</td><td></td></tr>'
+                '<tr><td><li><a href="%s" class="upfolder">..</a></li></td><td>%s</td><td>%s</td><td>%s</td><td></td></tr>'
                 % (
                     urllib.parse.quote(parentdir , errors='surrogatepass'),
-                    convert_size(stat.st_size),
+                    size_unit[0], size_unit[1],
                     datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
                 )
             )
@@ -515,19 +524,20 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 img = "file"
                 nbfiles += 1
                 size += stat.st_size
+            size_unit = convert_size(size)
             self.write_html(
-                '<tr><td><li><a href="%s" class="%s">%s</a></li></td><td class="size">%s</td><td>%s</td><td></td></tr>'
+                '<tr><td><li><a href="%s" class="%s">%s</a></li></td><td>%s</td><td>%s</td><td>%s</td><td></td></tr>'
                 % (
                     urllib.parse.quote(linkname, errors="surrogatepass"),
                     img,
                     html.escape(displayname, quote=False),
-                    convert_size(stat.st_size),
+                    size_unit[0], size_unit[1],
                     datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
                 )
             )
-        self.write_html("</table>")
-        s = "s" if nbfiles>1 else ""            
-        self.write_html(f'<p id="info">{nbfiles} file{s} - {convert_size(size)}</p>')
+        self.write_html("</tbody></table>")
+        s = "s" if nbfiles>1 else ""
+        self.write_html(f'<p id="info">{nbfiles} file{s} - {" ".join(convert_size(size))}</p>')
 
     def do_HEAD(self):
         self.send_response(HTTPStatus.OK)
