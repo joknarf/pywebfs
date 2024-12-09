@@ -156,6 +156,9 @@ CSS = f"""
         vertical-align: middle;
         color: #000;
     }}
+    a.path:hover {{
+        color: white;
+    }}
 
     .home {{
         display: inline-block;
@@ -411,7 +414,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 rexp.append(re.compile(accent_re(s), re.IGNORECASE))
             except:
                 rexp.append(re.compile(accent_re(re.escape(s))))
-        self.write_html('<table id="files">\n<tr><th class="name"><div class="name">Name</div><div class="info" id="nameinfo"></div></th><th class="size" colspan=2>Size</th><th>Modified</th><th style=width:100%></th></tr>')
+        self.write_html('<table id="files">\n<tr><th class="name"><div class="name">Name</div><div class="info" id="nameinfo">loading</div></th><th class="size" colspan=2>Size</th><th>Modified</th><th style=width:100%></th></tr>')
         nbfiles = 0
         size = 0
         self.log_message(path)
@@ -443,7 +446,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             rex = re.compile(accent_re(search), re.IGNORECASE)
         except:
             rex = re.compile(accent_re(re.escape(search)), re.IGNORECASE)
-        self.write_html('<table class="searchresult">\n<th class="name"><div class="name">Name</div><div class="info" id="nameinfo"></div></th><th>Text</th><th style=width:100%></th></tr>')
+        self.write_html('<table class="searchresult">\n<th class="name"><div class="name">Name</div><div class="info" id="nameinfo">loading</div></th><th>Text</th><th style=width:100%></th></tr>')
         nbfiles = 0
         for dirpath, dirnames, filenames in os.walk(path):
             for filename in filenames:
@@ -492,18 +495,17 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         except OSError:
             self.send_error(HTTPStatus.NOT_FOUND, "No permission to list directory")
             return ""
-        self.write_html('<table id="files">\n<thead><tr><th class="name"><div class="name">Name</div><div class="info" id="nameinfo"></div></th><th class="size" colspan=2>Size</th><th>Modified</th><th style=width:100%></th></tr></thead><tbody>')
+        self.write_html('<table id="files">\n<thead><tr><th class="name"><div class="name">Name</div><div class="info" id="nameinfo">loading</div></th><th class="size" colspan=2>Size</th><th>Modified</th><th style=width:100%></th></tr></thead><tbody>')
         if path != "./":
             parentdir = os.path.dirname(path[1:].rstrip("/"))
-            stat = os.stat("."+parentdir)
             if parentdir != "/":
                 parentdir += "/"
-            size_unit = convert_size(stat.st_size)
+            stat = os.stat("."+parentdir)
             self.write_html(
                 '<tr><td><li><a href="%s" class="upfolder">..</a></li></td><td>%s</td><td>%s</td><td>%s</td><td></td></tr>'
                 % (
                     urllib.parse.quote(parentdir , errors='surrogatepass'),
-                    size_unit[0], size_unit[1],
+                    "", "",
                     datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
                 )
             )
@@ -513,6 +515,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         for name in list:
             fullname = os.path.join(path, name)
             displayname = linkname = name
+            size_unit = ("","")
             stat = os.stat(fullname)
             if os.path.islink(fullname):
                 img = "link"
@@ -524,7 +527,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 img = "file"
                 nbfiles += 1
                 size += stat.st_size
-            size_unit = convert_size(stat.st_size)
+                size_unit = convert_size(stat.st_size)
             self.write_html(
                 '<tr><td><li><a href="%s" class="%s">%s</a></li></td><td>%s</td><td>%s</td><td>%s</td><td></td></tr>'
                 % (
