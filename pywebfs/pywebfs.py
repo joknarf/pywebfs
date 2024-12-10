@@ -200,7 +200,7 @@ CSS = f"""
         visibility: hidden;
         position: absolute;
     }}
-    th.name {{
+    #files th.name {{
         min-width: 400px;
     }}
     div.name {{
