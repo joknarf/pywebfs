@@ -718,8 +718,8 @@ def main():
         print(f"Error: {args.dir} not found", file=sys.stderr)
         sys.exit(1)
     NO_SEARCH_TXT = args.nosearch
+    hostname = resolve_hostname(gethostname())
     if args.gencert:
-        hostname = resolve_hostname(gethostname())
         certdir = os.path.expanduser("~/.pywebfs")
         if not os.path.exists(certdir):
             os.mkdir(certdir, mode=0o700)
@@ -732,7 +732,7 @@ def main():
             with open(args.key, "wb") as fd:
                 fd.write(key)
     prefix = "https" if args.cert else "http"
-    print(f"Starting {prefix} server listening on {args.server} port {args.port}")
+    print(f"Starting {prefix} server listening on {args.listen} port {args.port}")
     print(f"{prefix} server : {prefix}://{hostname}:{args.port}")
     if args.user and not args.password:
         args.password = secrets.token_urlsafe(13)
@@ -741,7 +741,7 @@ def main():
         args.title, 
         (args.cert, args.key),
         (args.user, args.password),
-        (args.server, args.port), HTTPFileHandler)
+        (args.listen, args.port), HTTPFileHandler)
 
     if args.daemon:
         import daemon
