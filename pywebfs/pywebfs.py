@@ -60,29 +60,32 @@ CSS = f"""
         line-height: 105%
     }}
     tr:nth-of-type(even) {{
-        background-color: #e3e3f3;
+        background-color: #e7e7f3;
     }}
     tr:hover {{
-        background-color: #ccf;
+        background-color: #ddf;
     }}
     td, th {{
         vertical-align: top;
-        padding-right: 20px;
+        padding: 5px 5px 2px 10px;
         white-space: nowrap;
+        line-height: 120%;
     }}
     th {{
         text-align: left;
         font-weight: unset;
         color: #5c5c5c;
-        vertical-align: middle;
     }}
     th.size {{
         text-align: center;
     }}
+    #files tr td a {{
+        color: #0366d6;
+    }}
     /* size num */
     #files tr td:nth-child(2) {{
         font-variant-numeric: tabular-nums;
-        padding-right: 5px;
+        padding-right: 0px;
         text-align: right;
     }}
     /* date */
@@ -98,7 +101,7 @@ CSS = f"""
         display: flex;
         line-height: 120%;
     }}
-    .mask {{
+    #mask {{
         width: 100%;
         margin: 0px;
         padding: 0px 30px 0px 0px;
@@ -109,7 +112,7 @@ CSS = f"""
         position: sticky;
         display: flex;
     }}
-    .list {{
+    #list {{
         width: calc(100% - 20px);
         margin: 0px 0px 10px 0px;
         background-color: #F3F4FF;
@@ -118,12 +121,6 @@ CSS = f"""
         display: table;
     }}
     a {{ text-decoration: none; }}
-    ul {{ 
-        line-height: 150%;
-        list-style-type: none;
-        padding: 10px 20px;
-        margin: 0;
-    }}
     form {{
         display: inline;
     }}
@@ -188,10 +185,11 @@ CSS = f"""
         display: inline-block;
         text-indent: 20px;
         background-size: 16px 16px;
-        background-position-y: 4px;
+        /*background-position-y: 4px;*/
     }}
     table {{
         border-spacing: 0;
+        margin: 1px 10px;
     }}
     .found {{
         background: #bfc;
@@ -199,6 +197,9 @@ CSS = f"""
     #info {{
         visibility: hidden;
         position: absolute;
+    }}
+    th.name {{
+        min-width: 100px;
     }}
     #files th.name {{
         min-width: 400px;
@@ -209,6 +210,8 @@ CSS = f"""
     .info {{
         float: right;
         font-size: 0.8em;
+        position: relative;
+        top: 1px;
     }}
     @media screen and (max-device-width: 480px){{
         body {{
@@ -434,12 +437,12 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                     size += stat.st_size
                     size_unit = convert_size(stat.st_size)
                     self.write_html(
-                        '<tr><td><li><a href="%s" class="file">%s</a></li></td><td>%s</td><td>%s</td><td>%s</td><td></td></tr>'
+                        '<tr><td><a href="%s" class="file">%s</a></td><td>%s</td><td>%s</td><td>%s</td><td></td></tr>'
                         % (
                             urllib.parse.quote(fpath[1:].replace("\\", "/"), errors="surrogatepass"),
                             html.escape(filename, quote=False),
                             size_unit[0], size_unit[1],
-                            datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+                            datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M")
                         )
                     )
         self.write_html("</table>")
@@ -465,7 +468,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                     urlpath = urllib.parse.quote(fpath, errors="surrogatepass")
                     self.write_html('''
                         <tr>
-                            <td><li><a href="%s" class="file" title="%s">%s</a></li></td>
+                            <td><a href="%s" class="file" title="%s">%s</a></td>
                             <td><pre>%s</pre></td>
                             <td></td>
                         </tr>
@@ -509,11 +512,11 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 parentdir += "/"
             stat = os.stat("."+parentdir)
             self.write_html(
-                '<tr><td><li><a href="%s" class="upfolder">..</a></li></td><td>%s</td><td>%s</td><td>%s</td><td></td></tr>'
+                '<tr><td><a href="%s" class="upfolder">..</a></td><td>%s</td><td>%s</td><td>%s</td><td></td></tr>\n'
                 % (
                     urllib.parse.quote(parentdir , errors='surrogatepass'),
                     "", "",
-                    datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+                    datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M")
                 )
             )
         list.sort(key=lambda a: a.lower())
@@ -536,13 +539,13 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 size += stat.st_size
                 size_unit = convert_size(stat.st_size)
             self.write_html(
-                '<tr><td><li><a href="%s" class="%s">%s</a></li></td><td>%s</td><td>%s</td><td>%s</td><td></td></tr>'
+                '<tr><td><a href="%s" class="%s">%s</a></td><td>%s</td><td>%s</td><td>%s</td><td></td></tr>\n'
                 % (
                     urllib.parse.quote(linkname, errors="surrogatepass"),
                     img,
                     html.escape(displayname, quote=False),
                     size_unit[0], size_unit[1],
-                    datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+                    datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M")
                 )
             )
         self.write_html("</tbody></table>")
@@ -605,28 +608,28 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         title = f"{self.server.title} - {displaypath}"
         htmldoc = HTML
         htmldoc += f"<title>{title}</title>\n</head>"
-        htmldoc += "<body>"
+        htmldoc += '<body onload="setmask()">'
 
-        href = '<a href="/" class="home" title="Home">/</a>'
+        href = '<a href="/" class="home" title="Home">&nbsp;</a>'
         fpath = "/"
         for dir in path.rstrip("/").split("/")[1:]:
             fpath += dir + "/"
-            href += '<a href="%s" class="path">%s/</a>' % (
+            href += '<a href="%s" class="path">/%s</a>' % (
                 urllib.parse.quote(fpath, errors="surrogatepass"),
                 html.escape(dir, quote=False),
             )
-        htmldoc += '<div class=mask>'
-        htmldoc += '<div class=header>'
-        htmldoc += "<form name=search>"
-        htmldoc += f"<input type=text name=search value='{search}' autofocus>"
-        htmldoc += '<button type=submit class="search" title="Search filenames">&nbsp;&nbsp;&nbsp;</button>'
+        htmldoc += '<div id="mask">'
+        htmldoc += '<div class="header">'
+        htmldoc += '<form name="search">'
+        htmldoc += f'<input type="text" name="search" value="{search}" autofocus>'
+        htmldoc += '<button type="submit" class="search" title="Search filenames">&nbsp;&nbsp;&nbsp;</button>'
         if not NO_SEARCH_TXT:
-            htmldoc += '<button type=submit name="searchtxt" value=1 class="searchtxt" title="Search in text files">&nbsp;&nbsp;&nbsp;</button>'
-        htmldoc += f"{href}\n</form>"
-        htmldoc += "</div></div>"
-        htmldoc += "<div class=list><ul>"
+            htmldoc += '<button type="submit" name="searchtxt" value=1 class="searchtxt" title="Search in text files">&nbsp;&nbsp;&nbsp;</button>'
+        htmldoc += f'{href}\n</form>'
+        htmldoc += '</div></div>'
+        htmldoc += '<div id="list">'
 
-        enddoc = "\n</ul>\n</div>"
+        enddoc = "\n</div>"
 
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-type", "text/html")
@@ -642,7 +645,15 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         else:
             self.list_directory("." + path)
         self.write_html(enddoc)
-        self.write_html('<script>document.getElementById("nameinfo").innerHTML=document.getElementById("info").innerHTML;</script>')
+        self.write_html('''
+                <script>
+                function setmask() {
+                    document.getElementById("mask").style.width=document.getElementById("list").offsetWidth + "px";
+                }
+                window.onresize = setmask;
+                document.getElementById("nameinfo").innerHTML=document.getElementById("info").innerHTML;
+                </script>
+                ''')
         self.write_html('</body>\n</html>\n')
 
     def devnull(self):
