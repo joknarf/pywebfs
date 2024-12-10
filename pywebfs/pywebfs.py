@@ -64,15 +64,16 @@ CSS = f"""
     tr:hover {{
         background-color: #ccf;
     }}
-    th {{
-        text-align: left;
-        font-weight: unset;
-        color: #5c5c5c;
-    }}
     td, th {{
         vertical-align: top;
         padding-right: 20px;
         white-space: nowrap;
+    }}
+    th {{
+        text-align: left;
+        font-weight: unset;
+        color: #5c5c5c;
+        vertical-align: middle;
     }}
     th.size {{
         text-align: center;
@@ -261,7 +262,7 @@ def convert_size(size_bytes):
     i = 0
     double_size = float(size_bytes)
     while double_size >= 1000 and i < len(size_name) - 1:
-        double_size /= 1000.0
+        double_size /= 1024.0
         i += 1
 
     return (str(round(double_size,1)), size_name[i])
