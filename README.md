@@ -7,12 +7,12 @@
 # pywebfs
 Simple Python HTTP(S) File Server
 
-# Install
+## Install
 ```
 $ pip install pywebfs
 ```
 
-# Quick start
+## Quick start
 
 * start http server sharing current directory listening on 0.0.0.0 port 8080
 ```
@@ -25,20 +25,20 @@ $ pywebfs
 * search text in files (grep)
 ![image](https://github.com/user-attachments/assets/2cb17905-ff55-4773-9c7c-d654c2d2f99f)
 
-# Customize server
+## Customize server
 ```
 $ pywebfs --dir /mydir --title "my fileserver" --listen 0.0.0.0 --port 8080
 $ pywebfs -d /mydir -t "my fileserver" -l 0.0.0.0 -p 8080
 ```
 
-# Basic auth user/password
+## Basic auth user/password
 ```
 $ pywebfs --dir /mydir --user myuser [--password mypass]
 $ pywebfs -d /mydir -u myuser [-P mypass]
 ```
 Generated password is given if no `--pasword` option
 
-# HTTPS server
+## HTTPS server
 
 * Generate auto-signed certificate and start https server
 ```
