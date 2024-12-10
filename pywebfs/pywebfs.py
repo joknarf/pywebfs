@@ -684,7 +684,7 @@ def main():
 
     parser = argparse.ArgumentParser(prog="pywebfs")
     parser.add_argument(
-        "-s", "--server", type=str, default="0.0.0.0", help="HTTP server listen address"
+        "-l", "--listen", type=str, default="0.0.0.0", help="HTTP server listen address"
     )
     parser.add_argument(
         "-p", "--port", type=int, default=8080, help="HTTP server listen port"
@@ -720,7 +720,6 @@ def main():
     NO_SEARCH_TXT = args.nosearch
     if args.gencert:
         hostname = resolve_hostname(gethostname())
-        print(hostname)
         certdir = os.path.expanduser("~/.pywebfs")
         if not os.path.exists(certdir):
             os.mkdir(certdir, mode=0o700)
@@ -733,7 +732,8 @@ def main():
             with open(args.key, "wb") as fd:
                 fd.write(key)
     prefix = "https" if args.cert else "http"
-    print(f"Starting {prefix} server : {prefix}://{args.server}:{args.port}")
+    print(f"Starting {prefix} server listening on {args.server} port {args.port}")
+    print(f"{prefix} server : {prefix}://{hostname}:{args.port}")
     if args.user and not args.password:
         args.password = secrets.token_urlsafe(13)
         print(f"Generated password: {args.password}")
