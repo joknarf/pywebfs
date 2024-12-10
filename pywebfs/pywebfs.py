@@ -383,27 +383,25 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         except ConnectionResetError:
             pass
 
-    def end_headers(self):
-        p = urllib.parse.urlparse(self.path)
-        fpath = fs_path("." + p.path)
-        is_html = p.query or os.path.isdir(fpath)
-        # adds extra headers to download/display file types.
-        if is_html:
-            self.send_header("Content-Type", f"text/html; charset={ENC}")
+    def mime_header(self):
+        mimetype = self.guess_type(self.path)
+        fpath = self.translate_path(self.path)
+        if mimetype == "application/octet-stream" and is_binary_file(fpath) == False:
+            mimetype = "text/plain"
+        self.log_message(mimetype)
+        if mimetype in ["text/plain"]:
+            self.send_header("Content-Disposition", "inline")
+        self.send_header("Content-Type", mimetype)
+        if self.path in ["/style.css", "/favicon.ico"]:
+            self.send_header("Cache-Control", "max-age=604800")
         else:
-            mimetype = self.guess_type(self.path)
-            if mimetype == "application/octet-stream" and is_binary_file(fpath) == False:
-                mimetype = "text/plain"
-            self.log_message(mimetype)
-            if mimetype in ["text/plain"]:
-                self.send_header("Content-Disposition", "inline")
-            self.send_header("Content-Type", mimetype)
-            if self.path in ["/style.css", "/favicon.ico"]:
-                self.send_header("Cache-Control", "max-age=604800")
-            else:
-                self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
-                self.send_header("Pragma", "no-cache")
-                self.send_header("Expires", "0")
+            self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+            self.send_header("Pragma", "no-cache")
+            self.send_header("Expires", "0")
+
+
+    def end_headers(self):
+        self.mime_header()
         super().end_headers()
 
 
@@ -623,7 +621,8 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         enddoc = "\n</ul>\n</div>"
 
         self.send_response(HTTPStatus.OK)
-        self.end_headers()
+        self.send_header("Content-type", "text/html")
+        super().end_headers()
 
         self.write_html(htmldoc)
 
