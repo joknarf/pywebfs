@@ -28,8 +28,8 @@ Generated password is given if no `--pasword` option
 
 * Generate auto-signed certificate and start https server
 ```
-$ pywebfs --dir /mydir --gencert myserver 192.169.1.11
-$ pywebfs -d /mydir --g myserver 192.169.1.11
+$ pywebfs --dir /mydir --gencert
+$ pywebfs -d /mydir --g
 ```
 
 * Start https server using existing certificate

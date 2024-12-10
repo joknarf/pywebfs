@@ -26,6 +26,7 @@ import urllib.parse
 from datetime import datetime, timedelta, timezone
 import ipaddress
 import secrets
+from socket import gethostname, gethostbyname_ex
 
 NO_SEARCH_TXT = False
 
@@ -299,6 +300,13 @@ def grep(rex, path, first=False):
         except:
             pass
     return founds
+
+def resolve_hostname(host):
+    """try get fqdn from DNS"""
+    try:
+        return gethostbyname_ex(host)[0]
+    except OSError:
+        return host
 
 def generate_selfsigned_cert(hostname, ip_addresses=None, key=None):
     """Generates self signed certificate for a hostname, and optional IP addresses.
@@ -697,7 +705,7 @@ def main():
     parser.add_argument("-u", "--user", type=str, help="username")
     parser.add_argument("-P", "--password", type=str, help="password")
     parser.add_argument("-D", "--daemon", action="store_true", help="Start as a daemon")
-    parser.add_argument("-g", "--gencert", type=str, nargs="+", help="hostname ipaddr  https server self signed cert")
+    parser.add_argument("-g", "--gencert", action="store_true", help="https server self signed cert")
     parser.add_argument("-n", "--nosearch", action="store_true", help="No search in text files button")
     args = parser.parse_args()
     if os.path.isdir(args.dir):
@@ -711,15 +719,15 @@ def main():
         sys.exit(1)
     NO_SEARCH_TXT = args.nosearch
     if args.gencert:
-        hostname = args.gencert.pop(0)
-        ips = args.gencert
+        hostname = resolve_hostname(gethostname())
+        print(hostname)
         certdir = os.path.expanduser("~/.pywebfs")
         if not os.path.exists(certdir):
             os.mkdir(certdir, mode=0o700)
         args.cert = args.cert or f"{certdir}/{hostname}.crt"
         args.key = args.key or f"{certdir}/{hostname}.key"
         if not os.path.exists(args.cert):
-            (cert, key) = generate_selfsigned_cert(hostname, ips, None)
+            (cert, key) = generate_selfsigned_cert(hostname)
             with open(args.cert, "wb") as fd:
                 fd.write(cert)
             with open(args.key, "wb") as fd:
