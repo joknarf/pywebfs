@@ -584,6 +584,8 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             super().end_headers()
             with open(path, 'rb') as f:
                 self.copyfile(f, self.wfile)
+        else:
+            self.send_error(HTTPStatus.NOT_FOUND, "File not found")
 
     def do_HEAD(self):
         self.send_response(HTTPStatus.OK)
