@@ -224,7 +224,7 @@ CSS = f"""
         body {{
             -webkit-text-size-adjust: 180%;
         }}
-        .search, .searchtxt, .home, .folder, .file, .link, .upfolder {{
+        .search, .searchtxt, .home, .folder, .file, .link, .upfolder, .download {{
             background-size: 32px 32px;
             text-indent: 40px;
         }}
