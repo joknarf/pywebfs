@@ -571,12 +571,15 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             if os.path.islink(fullname):
                 img = "link"
                 linkname = name + "/"
+                fsize = 0
             elif os.path.isdir(fullname):
                 linkname = name + "/"
                 img = "folder"
+                fsize = 0
             else:
                 img = "file"
                 nbfiles += 1
+                fsize = stat.st_size
                 size += stat.st_size
                 size_unit = convert_size(stat.st_size)
             linkname = urllib.parse.quote(linkname, errors="surrogatepass")
@@ -586,7 +589,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                     linkname,
                     img,
                     html.escape(displayname, quote=False),
-                    stat.st_size, size_unit[0], size_unit[1],
+                    fsize, size_unit[0], size_unit[1],
                     datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
                     f'<a href="{linkname}?download=1" class="download">&nbsp;</a>',
                 )
