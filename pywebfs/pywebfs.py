@@ -42,7 +42,7 @@ SEARCH_CSS = '<svg width="16px" height="16px" viewBox="0 0 24 24" fill="none" xm
 SEARCH_TXT_CSS = '<svg width="16px" height="16px" viewBox="6 5 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path fill-rule="evenodd" clip-rule="evenodd" d="M11.132 9.71395C10.139 11.2496 10.3328 13.2665 11.6 14.585C12.8468 15.885 14.8527 16.0883 16.335 15.065C16.6466 14.8505 16.9244 14.5906 17.159 14.294C17.3897 14.0023 17.5773 13.679 17.716 13.334C18.0006 12.6253 18.0742 11.8495 17.928 11.1C17.7841 10.3573 17.4268 9.67277 16.9 9.12995C16.3811 8.59347 15.7128 8.22552 14.982 8.07395C14.2541 7.92522 13.4982 8.00197 12.815 8.29395C12.1254 8.58951 11.5394 9.08388 11.132 9.71395Z" stroke="%23000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M17.5986 13.6868C17.2639 13.4428 16.7947 13.5165 16.5508 13.8513C16.3069 14.1861 16.3806 14.6552 16.7154 14.8991L17.5986 13.6868ZM19.0584 16.6061C19.3931 16.85 19.8623 16.7764 20.1062 16.4416C20.3501 16.1068 20.2764 15.6377 19.9416 15.3938L19.0584 16.6061ZM7.5 12.7499C7.91421 12.7499 8.25 12.4142 8.25 11.9999C8.25 11.5857 7.91421 11.2499 7.5 11.2499V12.7499ZM5.5 11.2499C5.08579 11.2499 4.75 11.5857 4.75 11.9999C4.75 12.4142 5.08579 12.7499 5.5 12.7499V11.2499ZM7.5 15.7499C7.91421 15.7499 8.25 15.4142 8.25 14.9999C8.25 14.5857 7.91421 14.2499 7.5 14.2499V15.7499ZM5.5 14.2499C5.08579 14.2499 4.75 14.5857 4.75 14.9999C4.75 15.4142 5.08579 15.7499 5.5 15.7499V14.2499ZM8.5 9.74994C8.91421 9.74994 9.25 9.41415 9.25 8.99994C9.25 8.58573 8.91421 8.24994 8.5 8.24994V9.74994ZM5.5 8.24994C5.08579 8.24994 4.75 8.58573 4.75 8.99994C4.75 9.41415 5.08579 9.74994 5.5 9.74994V8.24994ZM16.7154 14.8991L19.0584 16.6061L19.9416 15.3938L17.5986 13.6868L16.7154 14.8991ZM7.5 11.2499H5.5V12.7499H7.5V11.2499ZM7.5 14.2499H5.5V15.7499H7.5V14.2499ZM8.5 8.24994H5.5V9.74994H8.5V8.24994Z" fill="%23000000"></path></g></svg>'
 SEARCH_TXT_CSS = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" fill="%23000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><g id="Layer_2" data-name="Layer 2"><g id="Icons"><g><rect width="48" height="48" fill="none"></rect><path d="M29,27H13a2,2,0,0,1,0-4H29a2,2,0,0,1,0,4ZM13,31a2,2,0,0,0,0,4h8a2,2,0,0,0,0-4Zm24-5a2,2,0,0,0-2,2V42H7V8H17a2,2,0,0,0,0-4H5A2,2,0,0,0,3,6V44a2,2,0,0,0,2,2H37a2,2,0,0,0,2-2V28A2,2,0,0,0,37,26Zm7.4-.6a1.9,1.9,0,0,1-2.8,0l-5.1-5.1h0A10.4,10.4,0,0,1,31,22a10.1,10.1,0,0,1-7.1-3H13a2,2,0,0,1,0-4h8.5a9.9,9.9,0,0,1-.5-3,10,10,0,0,1,20,0,10.4,10.4,0,0,1-1.6,5.5h-.1l5.1,5.1A1.9,1.9,0,0,1,44.4,25.4ZM27.5,15a.9.9,0,0,1,1-1h4V13h-3a2,2,0,0,1-2-2V10a2,2,0,0,1,2-2H30V6.1a6,6,0,0,0,0,11.8V16H28.5A.9.9,0,0,1,27.5,15ZM37,12a6,6,0,0,0-5-5.9V8h1.5a.9.9,0,0,1,1,1,.9.9,0,0,1-1,1h-4v1h3a2,2,0,0,1,2,2v1a2,2,0,0,1-2,2H32v1.9l1.6-.5.6-.3a.1.1,0,0,1,.1-.1l.7-.5a.1.1,0,0,1,.1-.1l.6-.6h0l.5-.8h0l.2-.4A5.5,5.5,0,0,0,37,12Z"></path></g></g></g></g></svg>'
 DOWNLOAD_CSS = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M12.5535 16.5061C12.4114 16.6615 12.2106 16.75 12 16.75C11.7894 16.75 11.5886 16.6615 11.4465 16.5061L7.44648 12.1311C7.16698 11.8254 7.18822 11.351 7.49392 11.0715C7.79963 10.792 8.27402 10.8132 8.55352 11.1189L11.25 14.0682V3C11.25 2.58579 11.5858 2.25 12 2.25C12.4142 2.25 12.75 2.58579 12.75 3V14.0682L15.4465 11.1189C15.726 10.8132 16.2004 10.792 16.5061 11.0715C16.8118 11.351 16.833 11.8254 16.5535 12.1311L12.5535 16.5061Z" fill="%231C274C"></path><path d="M3.75 15C3.75 14.5858 3.41422 14.25 3 14.25C2.58579 14.25 2.25 14.5858 2.25 15V15.0549C2.24998 16.4225 2.24996 17.5248 2.36652 18.3918C2.48754 19.2919 2.74643 20.0497 3.34835 20.6516C3.95027 21.2536 4.70814 21.5125 5.60825 21.6335C6.47522 21.75 7.57754 21.75 8.94513 21.75H15.0549C16.4225 21.75 17.5248 21.75 18.3918 21.6335C19.2919 21.5125 20.0497 21.2536 20.6517 20.6516C21.2536 20.0497 21.5125 19.2919 21.6335 18.3918C21.75 17.5248 21.75 16.4225 21.75 15.0549V15C21.75 14.5858 21.4142 14.25 21 14.25C20.5858 14.25 20.25 14.5858 20.25 15C20.25 16.4354 20.2484 17.4365 20.1469 18.1919C20.0482 18.9257 19.8678 19.3142 19.591 19.591C19.3142 19.8678 18.9257 20.0482 18.1919 20.1469C17.4365 20.2484 16.4354 20.25 15 20.25H9C7.56459 20.25 6.56347 20.2484 5.80812 20.1469C5.07435 20.0482 4.68577 19.8678 4.40901 19.591C4.13225 19.3142 3.9518 18.9257 3.85315 18.1919C3.75159 17.4365 3.75 16.4354 3.75 15Z" fill="%231C274C"></path></g></svg>'
-
+SORT_CSS = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M16 18L16 6M16 6L20 10.125M16 6L12 10.125" stroke="%231C274C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 6L8 18M8 18L12 13.875M8 18L4 13.875" stroke="%231C274C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>'
 CSS = f"""
     html, body: {{
         margin:0px;
@@ -79,6 +79,7 @@ CSS = f"""
         text-align: left;
         font-weight: unset;
         color: #5c5c5c;
+        cursor: pointer;
     }}
     th.size {{
         text-align: center;
@@ -188,7 +189,11 @@ CSS = f"""
     .download {{
         background: url('data:image/svg+xml;utf8,{DOWNLOAD_CSS}') no-repeat;
     }}
-    .folder, .file, .link, .upfolder, .download {{
+    .sort {{
+        background: url('data:image/svg+xml;utf8,{SORT_CSS}') no-repeat;
+        text-indent: 15px !important;
+    }}
+    .folder, .file, .link, .upfolder, .download, .sort {{
         display: inline-block;
         text-indent: 20px;
         background-size: 16px 16px;
@@ -245,6 +250,33 @@ HTML = f"""
 # <style>
 # {CSS}
 # </style>
+
+JAVASCRIPT = """
+<script>
+    function setmask() {
+        document.getElementById("mask").style.width=document.getElementById("list").offsetWidth + 1 + "px";
+    }
+    window.onresize = setmask;
+    document.getElementById("nameinfo").innerHTML=document.getElementById("info").innerHTML;
+
+    const getCellValue = (tr, idx) => tr.children[idx].title || tr.children[idx].innerText || tr.children[idx].textContent;
+
+    const comparer = (idx, asc) => (a, b) => ((v1, v2) => 
+        v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2)
+        )(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx));
+
+    // do the work...
+    document.querySelectorAll('th').forEach(th => th.addEventListener('click', (() => {
+        const table = th.closest('table');
+        uprow = table.rows[1]
+        Array.from(table.querySelectorAll('tr:nth-child(n+2)'))
+            .sort(comparer(Array.from(th.parentNode.children).indexOf(th), this.asc = !this.asc))
+            .forEach(tr => table.appendChild(tr) );
+        if (uprow.cells[0].textContent=='..')
+            table.insertBefore(uprow, table.rows[1]);
+    })));
+</script>
+"""
 
 RE_AGENT = re.compile(r"(Edg|Chrome|Safari|Firefox|Opera|Lynx)[^ ]*")
 
@@ -513,7 +545,8 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         except OSError:
             self.send_error(HTTPStatus.NOT_FOUND, "No permission to list directory")
             return ""
-        self.write_html('<table id="files">\n<thead><tr><th class="name"><div class="name">Name</div><div class="info" id="nameinfo">loading</div></th><th class="size" colspan=2>Size</th><th>Modified</th><th style=width:100%></th></tr></thead><tbody>')
+#        self.write_html('<table id="files">\n<thead><tr><th class="name"><div class="name">Name</div><div class="info" id="nameinfo">loading</div></th><th class="size" colspan=2>Size</th><th>Modified</th><th style=width:100%></th></tr></thead><tbody>')
+        self.write_html('<table id="files">\n<tr><th class="name"><div class="name sort">Name</div><div class="info" id="nameinfo">loading</div></th><th class="size"><span class="sort">Size</span></th><th></th><th><span class="sort">Modified</span></th><th style=width:100%></th></tr>')
         if path != "./":
             parentdir = os.path.dirname(path[1:].rstrip("/"))
             if parentdir != "/":
@@ -548,17 +581,17 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 size_unit = convert_size(stat.st_size)
             linkname = urllib.parse.quote(linkname, errors="surrogatepass")
             self.write_html(
-                '<tr><td><a href="%s" class="%s">%s</a></td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n'
+                '<tr><td><a href="%s" class="%s">%s</a></td><td title="%s">%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n'
                 % (
                     linkname,
                     img,
                     html.escape(displayname, quote=False),
-                    size_unit[0], size_unit[1],
+                    stat.st_size, size_unit[0], size_unit[1],
                     datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
                     f'<a href="{linkname}?download=1" class="download">&nbsp;</a>',
                 )
             )
-        self.write_html("</tbody></table>")
+        self.write_html("</table>")
         s = "s" if nbfiles>1 else ""
         self.write_html(f'<p id="info">{nbfiles} file{s} - {" ".join(convert_size(size))}</p>')
 
@@ -683,15 +716,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         else:
             self.list_directory("." + path)
         self.write_html(enddoc)
-        self.write_html('''
-                <script>
-                function setmask() {
-                    document.getElementById("mask").style.width=document.getElementById("list").offsetWidth + 1 + "px";
-                }
-                window.onresize = setmask;
-                document.getElementById("nameinfo").innerHTML=document.getElementById("info").innerHTML;
-                </script>
-                ''')
+        self.write_html(JAVASCRIPT)
         self.write_html('</body>\n</html>\n')
 
     def devnull(self):
@@ -786,12 +811,15 @@ def main():
     if args.user and not args.password:
         args.password = secrets.token_urlsafe(13)
         print(f"Generated password: {args.password}")
-    server = HTTPFileServer(
-        args.title, 
-        (args.cert, args.key),
-        (args.user, args.password),
-        (args.listen, args.port), HTTPFileHandler)
-
+    try:
+        server = HTTPFileServer(
+            args.title, 
+            (args.cert, args.key),
+            (args.user, args.password),
+            (args.listen, args.port), HTTPFileHandler)
+    except OSError as e:
+        print(e)
+        sys.exit(1)
     if args.daemon:
         import daemon
         daemon_context = daemon.DaemonContext()
