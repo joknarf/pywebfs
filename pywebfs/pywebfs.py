@@ -561,20 +561,29 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         self.write_html(f'<p id="info">{nbfiles} file{s} - {" ".join(convert_size(size))}</p>')
 
     def download(self, path):
-        tmpdir = os.path.expanduser("~/.pywebfs")
-        basedir = os.path.basename(path.rstrip("/"))
-        tmpzip = tmpdir + "/" + basedir
-        make_archive(tmpzip, 'zip', "." + path)
-        tmpzip += ".zip"
-        fstat = os.stat(tmpzip)
-        self.send_response(HTTPStatus.OK)
-        self.send_header("Content-type", "application/zip")
-        self.send_header("Content-Length", str(fstat[6]))
-        self.send_header("Content-Disposition", f'attachment; filename="{basedir}.zip"')
-        super().end_headers()
-        with open(tmpzip, 'rb') as f:
-            self.copyfile(f, self.wfile)
-        os.remove(tmpzip)
+        if os.path.isdir(path):
+            tmpdir = os.path.expanduser("~/.pywebfs")
+            basedir = os.path.basename(path.rstrip("/"))
+            tmpzip = tmpdir + "/" + basedir
+            make_archive(tmpzip, 'zip', path)
+            tmpzip += ".zip"
+            fstat = os.stat(tmpzip)
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-type", "application/zip")
+            self.send_header("Content-Length", str(fstat[6]))
+            self.send_header("Content-Disposition", f'attachment; filename="{basedir}.zip"')
+            super().end_headers()
+            with open(tmpzip, 'rb') as f:
+                self.copyfile(f, self.wfile)
+            os.remove(tmpzip)
+        elif os.path.isfile(path):
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", self.guess_type(self.path))
+            self.send_header("Content-Length", os.stat(path).st_size)
+            self.send_header("Content-Disposition", 'attachment')
+            super().end_headers()
+            with open(path, 'rb') as f:
+                self.copyfile(f, self.wfile)
 
     def do_HEAD(self):
         self.send_response(HTTPStatus.OK)
@@ -626,10 +635,10 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         searchtxt = q.get("searchtxt", [""])[0]
         download = q.get("download", [""])[0]
         path = displaypath = fs_path(p.path)
+        if download:
+            return self.download("."+path)
         if not os.path.isdir("."+path):
             return super().do_GET()
-        if download:
-            return self.download(path)
         title = f"{self.server.title} - {html.escape(path, quote=False)}"
         htmldoc = HTML
         htmldoc += f"<title>{title}</title>\n</head>"
@@ -661,8 +670,6 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         super().end_headers()
 
         self.write_html(htmldoc)
-
-
 
         if p.query:
             if searchtxt:
