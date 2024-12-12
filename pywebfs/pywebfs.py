@@ -443,13 +443,15 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                     nbfiles += 1
                     size += stat.st_size
                     size_unit = convert_size(stat.st_size)
+                    linkname = urllib.parse.quote(fpath[1:].replace("\\", "/"), errors="surrogatepass")
                     self.write_html(
-                        '<tr><td><a href="%s" class="file">%s</a></td><td>%s</td><td>%s</td><td>%s</td><td></td></tr>'
+                        '<tr><td><a href="%s" class="file">%s</a></td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>'
                         % (
-                            urllib.parse.quote(fpath[1:].replace("\\", "/"), errors="surrogatepass"),
+                            linkname,
                             html.escape(filename, quote=False),
                             size_unit[0], size_unit[1],
-                            datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M")
+                            datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
+                            f'<a href="{linkname}?download=1" class="download">&nbsp;</a>',
                         )
                     )
         self.write_html("</table>")
