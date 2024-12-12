@@ -411,7 +411,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             self.send_header("Content-Disposition", "inline")
         self.send_header("Content-Type", mimetype)
         if self.path in ["/style.css", "/favicon.ico"]:
-            self.send_header("Cache-Control", "max-age=604800")
+            self.send_header("Cache-Control", "max-age=3600")
         else:
             self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
             self.send_header("Pragma", "no-cache")
@@ -684,7 +684,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         self.write_html('''
                 <script>
                 function setmask() {
-                    document.getElementById("mask").style.width=document.getElementById("list").offsetWidth + "px";
+                    document.getElementById("mask").style.width=document.getElementById("list").offsetWidth + 1 + "px";
                 }
                 window.onresize = setmask;
                 document.getElementById("nameinfo").innerHTML=document.getElementById("info").innerHTML;
