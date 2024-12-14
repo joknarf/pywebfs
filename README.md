@@ -72,3 +72,10 @@ $ pywebfs status
 $ pywebfs stop
 ```
 * log of server are stored in `~/.pywebfs/pwfs_<listen>:<port>.log`
+
+## Disclaimer
+
+As built on python http.server, read in the python3 documentation:
+
+>Warning
+>http.server is not recommended for production. It only implements basic security checks.
