@@ -25,6 +25,17 @@ $ pywebfs
 * search text in files (grep)
 ![image](https://github.com/user-attachments/assets/2cb17905-ff55-4773-9c7c-d654c2d2f99f)
 
+## features
+
+* Serve static files
+* Download folder as zip file
+* Filter files
+* Search files recursively multiple word any order
+* Search text in files recursively
+* Basic Auth support (single user)
+* HTTPS support
+* HTTPS self-signed certificate generator
+
 ## Customize server
 ```
 $ pywebfs --dir /mydir --title "my fileserver" --listen 0.0.0.0 --port 8080
@@ -50,4 +61,12 @@ $ pywebfs -d /mydir --g
 ```
 $ pywebfs --dir /mydir --cert /pathto/host.cert --key /pathto/host.key
 $ pywebfs -d /mydir -c /pathto/host.cert -k /pathto/host.key
+```
+
+## Launch server as a daemon (Linux)
+
+```
+$ pywebfs start
+$ pywebfs status
+$ pywebfs stop
 ```
