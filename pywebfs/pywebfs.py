@@ -23,6 +23,7 @@ except:
 from http import HTTPStatus
 import ssl
 import urllib.parse
+from time import sleep
 from datetime import datetime, timedelta, timezone
 import ipaddress
 import secrets
@@ -217,7 +218,7 @@ CSS = f"""
         min-width: 100px;
     }}
     #files th.name {{
-        min-width: 400px;
+        min-width: 200px;
     }}
     div.name {{
         float: left;
@@ -781,6 +782,9 @@ class HTTPFileServer(ThreadingHTTPServer):
             # )
 
 
+def log_message(*args):
+    print(datetime.now().strftime("- - - [%d/%b/%Y %H:%M:%S]"), *args, file=sys.stderr)
+
 def daemon_d(action, pidfilepath, dir=None, server=None):
     import signal
     import daemon, daemon.pidfile
@@ -793,26 +797,37 @@ def daemon_d(action, pidfilepath, dir=None, server=None):
             try:
                 os.kill(pid, signal.SIGINT)
             except:
-                pass
-            sys.exit(0)
+                return False
+            return True
     elif action == "status":
         status = pidfile.is_locked()
         if status:
             print(f"pywebfs running pid {pidfile.read_pid()}")
-        else:
-            print("pywebfs not running")
-        sys.exit((not status))
+            return True
+        print("pywebfs not running")
+        return False
     elif action == "start":
-        daemon_context = daemon.DaemonContext(stdout=sys.stdout, pidfile=pidfile)
-        daemon_context.files_preserve = [server.fileno()]
+        log = open(pidfilepath +".log", "ab+")
+        daemon_context = daemon.DaemonContext(
+            stderr=log,
+            pidfile=pidfile,
+            umask=0o077,
+            working_directory=dir,
+            files_preserve = [server.fileno()],
+        )
         with daemon_context:
-            os.chdir(dir)
-            server.serve_forever()
+            log_message("Starting server")
+            try:
+                server.serve_forever()
+            except KeyboardInterrupt:
+                log_message("Stopping server")
+                sys.exit(0)
 
-def start_server(hostname, args):
+
+def init_server(hostname, args):
     prefix = "https" if args.cert else "http"
-    print(f"Starting {prefix} server listening on {args.listen} port {args.port}")
-    print(f"{prefix} server : {prefix}://{hostname}:{args.port}")
+    log_message(f"Starting {prefix} server listening on {args.listen} port {args.port}")
+    log_message(f"{prefix} server : {prefix}://{hostname}:{args.port}")
     try:
         return HTTPFileServer(
             args.title, 
@@ -852,7 +867,7 @@ def main():
     parser.add_argument("-s", "--start", action="store_true", help="Start as a daemon")
     parser.add_argument("-g", "--gencert", action="store_true", help="https server self signed cert")
     parser.add_argument("-n", "--nosearch", action="store_true", help="No search in text files button")
-    parser.add_argument("action", nargs="?", help="daemon action start/stop/status", choices=["start","stop","status"])
+    parser.add_argument("action", nargs="?", help="daemon action start/stop/restart/status", choices=["start","stop","restart","status"])
     args = parser.parse_args()
     if os.path.isdir(args.dir):
         try:
@@ -881,16 +896,21 @@ def main():
         args.password = secrets.token_urlsafe(13)
         print(f"Generated password: {args.password}")
     server = None
-    if not args.action or args.action == "start":
-        server = start_server(hostname, args)
     pidfile = f"{PYWFSDIR}/pwfs_{args.listen}:{args.port}.pid"
+
+    if args.action == "restart":
+        daemon_d("stop", pidfile)
+        sleep(1)
+        args.action = "start"
+    if not args.action or args.action == "start":
+        server = init_server(hostname, args)
     if args.action:
-        daemon_d(args.action, pidfile, args.dir, server)
+        sys.exit(not daemon_d(args.action, pidfile, args.dir, server))
     else:
         try:
             server.serve_forever()
         except KeyboardInterrupt:
-            print(f"Stopping server")
+            log_message("Stopping server")
             sys.exit(0)
 
 
