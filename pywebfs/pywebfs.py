@@ -303,6 +303,10 @@ JAVASCRIPT = """
 
 RE_AGENT = re.compile(r"(Edg|Chrome|Safari|Firefox|Opera|Lynx)[^ ]*")
 
+class BadStat:
+    st_size = 0
+    st_mtime = 0
+
 def accent_re(rexp):
     """ regexp search any accent """
     return (
@@ -332,6 +336,13 @@ def convert_size(size_bytes):
         i += 1
 
     return (str(round(double_size,1)), size_name[i])
+
+
+def os_stat(path):
+    try:
+        return os.stat(path)
+    except OSError:
+        return BadStat()
 
 
 def is_binary_file(path):
@@ -494,7 +505,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             for filename in filenames:
                 if all([bool(x.search(filename)) for x in rexp]):
                     fpath = os.path.join(dirpath, filename)
-                    stat = os.stat(fpath)
+                    stat = os_stat(fpath)
                     nbfiles += 1
                     size += stat.st_size
                     size_unit = convert_size(stat.st_size)
@@ -574,7 +585,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             parentdir = os.path.dirname(path[1:].rstrip("/"))
             if parentdir != "/":
                 parentdir += "/"
-            stat = os.stat("."+parentdir)
+            stat = os_stat("."+parentdir)
             self.write_html(
                 '<tr><td><a href="%s" class="upfolder">..</a></td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td></td></tr>\n'
                 % (
@@ -591,7 +602,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             displayname = linkname = name
             size_unit = ("","")
             ext = ""
-            stat = os.stat(fullname)
+            stat = os_stat(fullname)
             if os.path.islink(fullname):
                 img = "link"
                 fsize = 0
@@ -633,7 +644,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             tmpzip = tmpdir + "/" + basedir
             make_archive(tmpzip, 'zip', path)
             tmpzip += ".zip"
-            fstat = os.stat(tmpzip)
+            fstat = os_stat(tmpzip)
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-type", "application/zip")
             self.send_header("Content-Length", str(fstat[6]))
@@ -645,7 +656,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         elif os.path.isfile(path):
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-Type", self.guess_type(self.path))
-            self.send_header("Content-Length", os.stat(path).st_size)
+            self.send_header("Content-Length", os_stat(path).st_size)
             self.send_header("Content-Disposition", 'attachment')
             super().end_headers()
             with open(path, 'rb') as f:
