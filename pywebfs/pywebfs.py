@@ -611,14 +611,14 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             elif os.path.isdir(fullname):
                 linkname = name + "/"
                 img = "folder"
-                fsize = 0
+                fsize = -1
             else:
                 img = "file"
                 nbfiles += 1
                 fsize = stat.st_size
                 size += stat.st_size
                 size_unit = convert_size(stat.st_size)
-                ext = os.path.splitext(displayname)[1][1:]
+                ext = os.path.splitext(displayname)[1][1:] or " "
                 displayname = os.path.splitext(displayname)[0]
             linkname = urllib.parse.quote(linkname, errors="surrogatepass")
             self.write_html(
