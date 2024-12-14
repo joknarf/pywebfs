@@ -10,7 +10,7 @@ maintainers = [
 description = "Simple Python HTTP File Server"
 dependencies = [
   "cryptography>=40.0.2",
-  "python-daemon>=3.1.2",
+  "python-daemon>=2.3.2",
 ]
 dynamic=["version"]
 readme = "README.md"
