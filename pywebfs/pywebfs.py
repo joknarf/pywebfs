@@ -594,8 +594,9 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             stat = os.stat(fullname)
             if os.path.islink(fullname):
                 img = "link"
-                linkname = name + "/"
                 fsize = 0
+                if os.path.isdir(fullname):
+                    linkname = name + "/"
             elif os.path.isdir(fullname):
                 linkname = name + "/"
                 img = "folder"
