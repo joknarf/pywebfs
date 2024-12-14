@@ -785,11 +785,11 @@ class HTTPFileServer(ThreadingHTTPServer):
 def log_message(*args):
     print(datetime.now().strftime("- - - [%d/%b/%Y %H:%M:%S]"), *args, file=sys.stderr)
 
-def daemon_d(action, pidfilepath, dir=None, server=None):
+def daemon_d(action, pidfilepath, hostname=None, args=None):
     import signal
     import daemon, daemon.pidfile
 
-    pidfile = daemon.pidfile.TimeoutPIDLockFile(pidfilepath+".pid")
+    pidfile = daemon.pidfile.TimeoutPIDLockFile(pidfilepath+".pid", acquire_timeout=30)
     if action == "stop":
         if pidfile.is_locked():
             pid = pidfile.read_pid()
@@ -807,16 +807,17 @@ def daemon_d(action, pidfilepath, dir=None, server=None):
         print("pywebfs not running")
         return False
     elif action == "start":
+        print(f"Starting server")
         log = open(pidfilepath + ".log", "ab+")
         daemon_context = daemon.DaemonContext(
             stderr=log,
             pidfile=pidfile,
             umask=0o077,
-            working_directory=dir,
-            files_preserve = [server.fileno()],
+            working_directory=args.dir,
         )
         with daemon_context:
             log_message("Starting server")
+            server = init_server(hostname, args)
             try:
                 server.serve_forever()
             except KeyboardInterrupt:
@@ -895,18 +896,17 @@ def main():
     if args.user and not args.password:
         args.password = secrets.token_urlsafe(13)
         print(f"Generated password: {args.password}")
-    server = None
     pidfile = f"{PYWFSDIR}/pwfs_{args.listen}:{args.port}"
 
     if args.action == "restart":
         daemon_d("stop", pidfile)
-        sleep(1)
         args.action = "start"
-    if not args.action or args.action == "start":
-        server = init_server(hostname, args)
+#    if not args.action or args.action == "start":
+#        server = init_server(hostname, args)
     if args.action:
-        sys.exit(not daemon_d(args.action, pidfile, args.dir, server))
+        sys.exit(not daemon_d(args.action, pidfile, hostname, args))
     else:
+        server = init_server(hostname, args)
         try:
             server.serve_forever()
         except KeyboardInterrupt:
