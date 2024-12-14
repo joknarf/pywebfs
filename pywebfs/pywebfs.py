@@ -445,6 +445,50 @@ def generate_selfsigned_cert(hostname, ip_addresses=None, key=None):
 
     return cert_pem, key_pem
 
+def file_tr(path, name):
+    fullname = os.path.join(path, name)
+    displayname = linkname = name
+    size_unit = ("","")
+    ext = ""
+    stat = os_stat(fullname)
+    file = False
+    size = 0
+    if os.path.islink(fullname):
+        img = "link"
+        fsize = 0
+        if os.path.isdir(fullname):
+            linkname = name + "/"
+        else:
+            ext = os.path.splitext(displayname)[1][1:] or " "
+            displayname = os.path.splitext(displayname)[0]
+    elif os.path.isdir(fullname):
+        linkname = name + "/"
+        img = "folder"
+        fsize = -1
+    else:
+        img = "file"
+        file = True
+        fsize = stat.st_size
+        size = stat.st_size
+        size_unit = convert_size(stat.st_size)
+        ext = os.path.splitext(displayname)[1][1:] or " "
+        displayname = os.path.splitext(displayname)[0]
+    linkname = urllib.parse.quote(linkname, errors="surrogatepass")
+    return {
+        "file": file,
+        "size": size,
+        "tr" : '<tr><td><a href="%s" class="%s">%s</a></td><td>%s</td><td title="%s">%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n'
+        % (
+            linkname,
+            img,
+            html.escape(displayname, quote=False),
+            html.escape(ext, quote=False),
+            fsize, size_unit[0], size_unit[1],
+            datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
+            f'<a href="{linkname}?download=1" class="download">&nbsp;</a>',
+        )
+    }
+
 
 class HTTPFileHandler(SimpleHTTPRequestHandler):
     """Class handler for HTTP"""
@@ -497,29 +541,33 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 rexp.append(re.compile(accent_re(s), re.IGNORECASE))
             except:
                 rexp.append(re.compile(accent_re(re.escape(s))))
-        self.write_html('<table id="files">\n<tr><th class="name"><div class="name sort">Name</div><div class="info" id="nameinfo">loading</div></th><th class="size"><span class="sort">Size</span></th><th></th><th><span class="sort">Modified</th><th style=width:100%></th></tr>')
+        self.write_html('<table id="files">\n<tr><th class="name"><div class="name sort">Name</div><div class="info" id="nameinfo">loading</div></th><th>Ext</th><th class="size"><span class="sort">Size</span></th><th></th><th><span class="sort">Modified</th><th style=width:100%></th></tr>')
         nbfiles = 0
         size = 0
         self.log_message(path)
         for dirpath, dirnames, filenames in os.walk(path):
             for filename in filenames:
                 if all([bool(x.search(filename)) for x in rexp]):
-                    fpath = os.path.join(dirpath, filename)
-                    stat = os_stat(fpath)
-                    nbfiles += 1
-                    size += stat.st_size
-                    size_unit = convert_size(stat.st_size)
-                    linkname = urllib.parse.quote(fpath[1:].replace("\\", "/"), errors="surrogatepass")
-                    self.write_html(
-                        '<tr><td><a href="%s" class="file">%s</a></td><td title="%s">%s</td><td>%s</td><td>%s</td><td>%s</td></tr>'
-                        % (
-                            linkname,
-                            html.escape(filename, quote=False),
-                            stat.st_size, size_unit[0], size_unit[1],
-                            datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
-                            f'<a href="{linkname}?download=1" class="download">&nbsp;</a>',
-                        )
-                    )
+                    info = file_tr(dirpath, filename)
+                    size += info["size"]
+                    nbfiles += info["file"]
+                    self.write_html(info["tr"])
+                    # fpath = os.path.join(dirpath, filename)
+                    # stat = os_stat(fpath)
+                    # nbfiles += 1
+                    # size += stat.st_size
+                    # size_unit = convert_size(stat.st_size)
+                    # linkname = urllib.parse.quote(fpath[1:].replace("\\", "/"), errors="surrogatepass")
+                    # self.write_html(
+                    #     '<tr><td><a href="%s" class="file">%s</a></td><td title="%s">%s</td><td>%s</td><td>%s</td><td>%s</td></tr>'
+                    #     % (
+                    #         linkname,
+                    #         html.escape(filename, quote=False),
+                    #         stat.st_size, size_unit[0], size_unit[1],
+                    #         datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
+                    #         f'<a href="{linkname}?download=1" class="download">&nbsp;</a>',
+                    #     )
+                    # )
         self.write_html("</table>")
         s = "s" if nbfiles>1 else ""            
         self.write_html(f'<p id="info">{nbfiles} file{s} - {" ".join(convert_size(size))}</p>')
@@ -598,41 +646,10 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         nbfiles = 0
         size = 0
         for name in list:
-            fullname = os.path.join(path, name)
-            displayname = linkname = name
-            size_unit = ("","")
-            ext = ""
-            stat = os_stat(fullname)
-            if os.path.islink(fullname):
-                img = "link"
-                fsize = 0
-                if os.path.isdir(fullname):
-                    linkname = name + "/"
-            elif os.path.isdir(fullname):
-                linkname = name + "/"
-                img = "folder"
-                fsize = -1
-            else:
-                img = "file"
-                nbfiles += 1
-                fsize = stat.st_size
-                size += stat.st_size
-                size_unit = convert_size(stat.st_size)
-                ext = os.path.splitext(displayname)[1][1:] or " "
-                displayname = os.path.splitext(displayname)[0]
-            linkname = urllib.parse.quote(linkname, errors="surrogatepass")
-            self.write_html(
-                '<tr><td><a href="%s" class="%s">%s</a></td><td>%s</td><td title="%s">%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n'
-                % (
-                    linkname,
-                    img,
-                    html.escape(displayname, quote=False),
-                    html.escape(ext, quote=False),
-                    fsize, size_unit[0], size_unit[1],
-                    datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
-                    f'<a href="{linkname}?download=1" class="download">&nbsp;</a>',
-                )
-            )
+            info = file_tr(path, name)
+            size += info["size"]
+            nbfiles += info["file"]
+            self.write_html(info["tr"])
         self.write_html("</table>")
         s = "s" if nbfiles>1 else ""
         self.write_html(f'<p id="info">{nbfiles} file{s} - {" ".join(convert_size(size))}</p>')
