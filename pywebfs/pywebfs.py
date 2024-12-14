@@ -63,9 +63,10 @@ CSS = f"""
         margin: 0;
         line-height: 105%
     }}
+    /*
     tr:nth-of-type(even) {{
         background-color: #e7e7f3;
-    }}
+    }}*/
     tr:hover {{
         background-color: #ddf;
     }}
@@ -275,6 +276,24 @@ JAVASCRIPT = """
         if (uprow.cells[0].textContent=='..')
             table.insertBefore(uprow, table.rows[1]);
     })));
+
+    
+    document.getElementById("search").addEventListener("keyup", function() {
+        var input = document.getElementById("search").value.toLowerCase();
+        var table = document.getElementById("list");
+        var rows = table.getElementsByTagName("tr");
+
+        for (var i = 1; i < rows.length; i++) {
+            var cells = rows[i].getElementsByTagName("td");
+
+            if (cells[0].innerText.toLowerCase().includes(input)) {
+                rows[i].style.display = "";
+            } else {
+                rows[i].style.display = "none";
+            }
+        }
+    });
+
 </script>
 """
 
@@ -463,7 +482,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 rexp.append(re.compile(accent_re(s), re.IGNORECASE))
             except:
                 rexp.append(re.compile(accent_re(re.escape(s))))
-        self.write_html('<table id="files">\n<tr><th class="name"><div class="name">Name</div><div class="info" id="nameinfo">loading</div></th><th class="size" colspan=2>Size</th><th>Modified</th><th style=width:100%></th></tr>')
+        self.write_html('<table id="files">\n<tr><th class="name"><div class="name sort">Name</div><div class="info" id="nameinfo">loading</div></th><th class="size"><span class="sort">Size</span></th><th></th><th><span class="sort">Modified</th><th style=width:100%></th></tr>')
         nbfiles = 0
         size = 0
         self.log_message(path)
@@ -477,11 +496,11 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                     size_unit = convert_size(stat.st_size)
                     linkname = urllib.parse.quote(fpath[1:].replace("\\", "/"), errors="surrogatepass")
                     self.write_html(
-                        '<tr><td><a href="%s" class="file">%s</a></td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>'
+                        '<tr><td><a href="%s" class="file">%s</a></td><td title="%s">%s</td><td>%s</td><td>%s</td><td>%s</td></tr>'
                         % (
                             linkname,
                             html.escape(filename, quote=False),
-                            size_unit[0], size_unit[1],
+                            stat.st_size, size_unit[0], size_unit[1],
                             datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
                             f'<a href="{linkname}?download=1" class="download">&nbsp;</a>',
                         )
@@ -695,7 +714,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         htmldoc += '<div id="mask">'
         htmldoc += '<div class="header">'
         htmldoc += '<form name="search">'
-        htmldoc += f'<input type="text" name="search" value="{search}" autofocus>'
+        htmldoc += f'<input type="text" name="search" id="search" autofocus autocomplete="off">'
         htmldoc += '<button type="submit" class="search" title="Search filenames">&nbsp;&nbsp;&nbsp;</button>'
         if not NO_SEARCH_TXT:
             htmldoc += '<button type="submit" name="searchtxt" value=1 class="searchtxt" title="Search in text files">&nbsp;&nbsp;&nbsp;</button>'
