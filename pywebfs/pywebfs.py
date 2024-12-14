@@ -29,6 +29,8 @@ import secrets
 from socket import gethostname, gethostbyname_ex
 from shutil import make_archive
 
+PYWFSDIR = os.path.expanduser("~/.pywebfs")
+
 NO_SEARCH_TXT = False
 
 FOLDER = '<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" xml:space="preserve" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path id="SVGCleanerId_0" style="fill:#FFC36E;" d="M183.295,123.586H55.05c-6.687,0-12.801-3.778-15.791-9.76l-12.776-25.55 l12.776-25.55c2.99-5.982,9.103-9.76,15.791-9.76h128.246c6.687,0,12.801,3.778,15.791,9.76l12.775,25.55l-12.776,25.55 C196.096,119.808,189.983,123.586,183.295,123.586z"></path> <g> <path id="SVGCleanerId_0_1_" style="fill:#FFC36E;" d="M183.295,123.586H55.05c-6.687,0-12.801-3.778-15.791-9.76l-12.776-25.55 l12.776-25.55c2.99-5.982,9.103-9.76,15.791-9.76h128.246c6.687,0,12.801,3.778,15.791,9.76l12.775,25.55l-12.776,25.55 C196.096,119.808,189.983,123.586,183.295,123.586z"></path> </g> <path style="fill:#EFF2FA;" d="M485.517,70.621H26.483c-4.875,0-8.828,3.953-8.828,8.828v44.138h476.69V79.448 C494.345,74.573,490.392,70.621,485.517,70.621z"></path> <rect x="17.655" y="105.931" style="fill:#E1E6F2;" width="476.69" height="17.655"></rect> <path style="fill:#FFD782;" d="M494.345,88.276H217.318c-3.343,0-6.4,1.889-7.895,4.879l-10.336,20.671 c-2.99,5.982-9.105,9.76-15.791,9.76H55.05c-6.687,0-12.801-3.778-15.791-9.76L28.922,93.155c-1.495-2.99-4.552-4.879-7.895-4.879 h-3.372C7.904,88.276,0,96.18,0,105.931v335.448c0,9.751,7.904,17.655,17.655,17.655h476.69c9.751,0,17.655-7.904,17.655-17.655 V105.931C512,96.18,504.096,88.276,494.345,88.276z"></path> <path style="fill:#FFC36E;" d="M485.517,441.379H26.483c-4.875,0-8.828-3.953-8.828-8.828l0,0c0-4.875,3.953-8.828,8.828-8.828 h459.034c4.875,0,8.828,3.953,8.828,8.828l0,0C494.345,437.427,490.392,441.379,485.517,441.379z"></path> <path style="fill:#EFF2FA;" d="M326.621,220.69h132.414c4.875,0,8.828-3.953,8.828-8.828v-70.621c0-4.875-3.953-8.828-8.828-8.828 H326.621c-4.875,0-8.828,3.953-8.828,8.828v70.621C317.793,216.737,321.746,220.69,326.621,220.69z"></path> <path style="fill:#C7CFE2;" d="M441.379,167.724h-97.103c-4.875,0-8.828-3.953-8.828-8.828l0,0c0-4.875,3.953-8.828,8.828-8.828 h97.103c4.875,0,8.828,3.953,8.828,8.828l0,0C450.207,163.772,446.254,167.724,441.379,167.724z"></path> <path style="fill:#D7DEED;" d="M441.379,203.034h-97.103c-4.875,0-8.828-3.953-8.828-8.828l0,0c0-4.875,3.953-8.828,8.828-8.828 h97.103c4.875,0,8.828,3.953,8.828,8.828l0,0C450.207,199.082,446.254,203.034,441.379,203.034z"></path> </g></svg>'
@@ -89,13 +91,13 @@ CSS = f"""
         color: #0366d6;
     }}
     /* size num */
-    #files tr td:nth-child(2) {{
+    #files tr td:nth-child(3) {{
         font-variant-numeric: tabular-nums;
         padding-right: 0px;
         text-align: right;
     }}
     /* date */
-    #files tr td:nth-child(4) {{
+    #files tr td:nth-child(5) {{
         font-variant-numeric: tabular-nums;    
     }}
 
@@ -565,17 +567,17 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             self.send_error(HTTPStatus.NOT_FOUND, "No permission to list directory")
             return ""
 #        self.write_html('<table id="files">\n<thead><tr><th class="name"><div class="name">Name</div><div class="info" id="nameinfo">loading</div></th><th class="size" colspan=2>Size</th><th>Modified</th><th style=width:100%></th></tr></thead><tbody>')
-        self.write_html('<table id="files">\n<tr><th class="name"><div class="name sort">Name</div><div class="info" id="nameinfo">loading</div></th><th class="size"><span class="sort">Size</span></th><th></th><th><span class="sort">Modified</span></th><th style=width:100%></th></tr>')
+        self.write_html('<table id="files">\n<tr><th class="name"><div class="name sort">Name</div><div class="info" id="nameinfo">loading</div></th><th><span class="sort">Ext</span></th><th class="size"><span class="sort">Size</span></th><th></th><th><span class="sort">Modified</span></th><th style=width:100%></th></tr>')
         if path != "./":
             parentdir = os.path.dirname(path[1:].rstrip("/"))
             if parentdir != "/":
                 parentdir += "/"
             stat = os.stat("."+parentdir)
             self.write_html(
-                '<tr><td><a href="%s" class="upfolder">..</a></td><td>%s</td><td>%s</td><td>%s</td><td></td></tr>\n'
+                '<tr><td><a href="%s" class="upfolder">..</a></td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td></td></tr>\n'
                 % (
                     urllib.parse.quote(parentdir , errors='surrogatepass'),
-                    "", "",
+                    "", "", "",
                     datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M")
                 )
             )
@@ -586,6 +588,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             fullname = os.path.join(path, name)
             displayname = linkname = name
             size_unit = ("","")
+            ext = ""
             stat = os.stat(fullname)
             if os.path.islink(fullname):
                 img = "link"
@@ -601,13 +604,16 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 fsize = stat.st_size
                 size += stat.st_size
                 size_unit = convert_size(stat.st_size)
+                ext = os.path.splitext(displayname)[1][1:]
+                displayname = os.path.splitext(displayname)[0]
             linkname = urllib.parse.quote(linkname, errors="surrogatepass")
             self.write_html(
-                '<tr><td><a href="%s" class="%s">%s</a></td><td title="%s">%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n'
+                '<tr><td><a href="%s" class="%s">%s</a></td><td>%s</td><td title="%s">%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n'
                 % (
                     linkname,
                     img,
                     html.escape(displayname, quote=False),
+                    html.escape(ext, quote=False),
                     fsize, size_unit[0], size_unit[1],
                     datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
                     f'<a href="{linkname}?download=1" class="download">&nbsp;</a>',
@@ -774,6 +780,50 @@ class HTTPFileServer(ThreadingHTTPServer):
             #     server_side=True
             # )
 
+
+def daemon_d(action, pidfilepath, dir=None, server=None):
+    import signal
+    import daemon, daemon.pidfile
+
+    pidfile = daemon.pidfile.TimeoutPIDLockFile(pidfilepath)
+    if action == "stop":
+        if pidfile.is_locked():
+            pid = pidfile.read_pid()
+            print(f"Stopping server pid {pid}")
+            try:
+                os.kill(pid, signal.SIGINT)
+            except:
+                pass
+            sys.exit(0)
+    elif action == "status":
+        status = pidfile.is_locked()
+        if status:
+            print(f"pywebfs running pid {pidfile.read_pid()}")
+        else:
+            print("pywebfs not running")
+        sys.exit((not status))
+    elif action == "start":
+        daemon_context = daemon.DaemonContext(stdout=sys.stdout, pidfile=pidfile)
+        daemon_context.files_preserve = [server.fileno()]
+        with daemon_context:
+            os.chdir(dir)
+            server.serve_forever()
+
+def start_server(hostname, args):
+    prefix = "https" if args.cert else "http"
+    print(f"Starting {prefix} server listening on {args.listen} port {args.port}")
+    print(f"{prefix} server : {prefix}://{hostname}:{args.port}")
+    try:
+        return HTTPFileServer(
+            args.title, 
+            (args.cert, args.key),
+            (args.user, args.password),
+            (args.listen, args.port), HTTPFileHandler)
+    except OSError as e:
+        print(e)
+        sys.exit(1)
+
+
 def main():
     """start http server according to args"""
     global NO_SEARCH_TXT
@@ -793,16 +843,16 @@ def main():
         "--title",
         type=str,
         default="FileBrowser",
-        nargs="?",
         help="Web html title",
     )
     parser.add_argument("-c", "--cert", type=str, help="Path to https certificate")
     parser.add_argument("-k", "--key", type=str, help="Path to https certificate key")
     parser.add_argument("-u", "--user", type=str, help="username")
     parser.add_argument("-P", "--password", type=str, help="password")
-    parser.add_argument("-D", "--daemon", action="store_true", help="Start as a daemon")
+    parser.add_argument("-s", "--start", action="store_true", help="Start as a daemon")
     parser.add_argument("-g", "--gencert", action="store_true", help="https server self signed cert")
     parser.add_argument("-n", "--nosearch", action="store_true", help="No search in text files button")
+    parser.add_argument("action", nargs="?", help="daemon action start/stop/status", choices=["start","stop","status"])
     args = parser.parse_args()
     if os.path.isdir(args.dir):
         try:
@@ -815,45 +865,32 @@ def main():
         sys.exit(1)
     NO_SEARCH_TXT = args.nosearch
     hostname = resolve_hostname(gethostname())
+    if not os.path.exists(PYWFSDIR):
+        os.mkdir(PYWFSDIR, mode=0o700)
+
     if args.gencert:
-        certdir = os.path.expanduser("~/.pywebfs")
-        if not os.path.exists(certdir):
-            os.mkdir(certdir, mode=0o700)
-        args.cert = args.cert or f"{certdir}/{hostname}.crt"
-        args.key = args.key or f"{certdir}/{hostname}.key"
+        args.cert = args.cert or f"{PYWFSDIR}/{hostname}.crt"
+        args.key = args.key or f"{PYWFSDIR}/{hostname}.key"
         if not os.path.exists(args.cert):
             (cert, key) = generate_selfsigned_cert(hostname)
             with open(args.cert, "wb") as fd:
                 fd.write(cert)
             with open(args.key, "wb") as fd:
                 fd.write(key)
-    prefix = "https" if args.cert else "http"
-    print(f"Starting {prefix} server listening on {args.listen} port {args.port}")
-    print(f"{prefix} server : {prefix}://{hostname}:{args.port}")
     if args.user and not args.password:
         args.password = secrets.token_urlsafe(13)
         print(f"Generated password: {args.password}")
-    try:
-        server = HTTPFileServer(
-            args.title, 
-            (args.cert, args.key),
-            (args.user, args.password),
-            (args.listen, args.port), HTTPFileHandler)
-    except OSError as e:
-        print(e)
-        sys.exit(1)
-    if args.daemon:
-        import daemon
-        daemon_context = daemon.DaemonContext()
-        daemon_context.files_preserve = [server.fileno()]
-        with daemon_context:
-            os.chdir(args.dir)
-            server.serve_forever()
+    server = None
+    if not args.action or args.action == "start":
+        server = start_server(hostname, args)
+    pidfile = f"{PYWFSDIR}/pwfs_{args.listen}:{args.port}.pid"
+    if args.action:
+        daemon_d(args.action, pidfile, args.dir, server)
     else:
         try:
             server.serve_forever()
         except KeyboardInterrupt:
-            print(f"Stopping {prefix} server")
+            print(f"Stopping server")
             sys.exit(0)
 
 
