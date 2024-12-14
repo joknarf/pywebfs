@@ -552,22 +552,6 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                     size += info["size"]
                     nbfiles += info["file"]
                     self.write_html(info["tr"])
-                    # fpath = os.path.join(dirpath, filename)
-                    # stat = os_stat(fpath)
-                    # nbfiles += 1
-                    # size += stat.st_size
-                    # size_unit = convert_size(stat.st_size)
-                    # linkname = urllib.parse.quote(fpath[1:].replace("\\", "/"), errors="surrogatepass")
-                    # self.write_html(
-                    #     '<tr><td><a href="%s" class="file">%s</a></td><td title="%s">%s</td><td>%s</td><td>%s</td><td>%s</td></tr>'
-                    #     % (
-                    #         linkname,
-                    #         html.escape(filename, quote=False),
-                    #         stat.st_size, size_unit[0], size_unit[1],
-                    #         datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
-                    #         f'<a href="{linkname}?download=1" class="download">&nbsp;</a>',
-                    #     )
-                    # )
         self.write_html("</table>")
         s = "s" if nbfiles>1 else ""            
         self.write_html(f'<p id="info">{nbfiles} file{s} - {" ".join(convert_size(size))}</p>')
