@@ -789,7 +789,7 @@ def daemon_d(action, pidfilepath, dir=None, server=None):
     import signal
     import daemon, daemon.pidfile
 
-    pidfile = daemon.pidfile.TimeoutPIDLockFile(pidfilepath)
+    pidfile = daemon.pidfile.TimeoutPIDLockFile(pidfilepath+".pid")
     if action == "stop":
         if pidfile.is_locked():
             pid = pidfile.read_pid()
@@ -807,7 +807,7 @@ def daemon_d(action, pidfilepath, dir=None, server=None):
         print("pywebfs not running")
         return False
     elif action == "start":
-        log = open(pidfilepath +".log", "ab+")
+        log = open(pidfilepath + ".log", "ab+")
         daemon_context = daemon.DaemonContext(
             stderr=log,
             pidfile=pidfile,
@@ -896,7 +896,7 @@ def main():
         args.password = secrets.token_urlsafe(13)
         print(f"Generated password: {args.password}")
     server = None
-    pidfile = f"{PYWFSDIR}/pwfs_{args.listen}:{args.port}.pid"
+    pidfile = f"{PYWFSDIR}/pwfs_{args.listen}:{args.port}"
 
     if args.action == "restart":
         daemon_d("stop", pidfile)
