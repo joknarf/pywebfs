@@ -35,6 +35,7 @@ $ pywebfs
 * Basic Auth support (single user)
 * HTTPS support
 * HTTPS self-signed certificate generator
+* Can be started as a daemon (POSIX)
 
 ## Customize server
 ```
@@ -70,3 +71,4 @@ $ pywebfs start
 $ pywebfs status
 $ pywebfs stop
 ```
+* log of server are stored in `~/.pywebfs/pwfs_<listen>:<port>.log`
