@@ -561,7 +561,7 @@ def file_tr(path, name, link=None):
         '<td title="%s">%s</td>' % (fsize, size_unit[0]),
         '<td>%s</td>' % size_unit[1],
         '<td>%s</td>' % get_username(stat.st_uid),
-        '<td>%s</td>' % get_groupname(stat.st_uid),
+        '<td>%s</td>' % get_groupname(stat.st_gid),
         '<td>%s</td>' % convert_mode(stat.st_mode),
         '<td>%s</td>' % datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
         '<td>%s</td>' % f'<a href="{linkname}?download=1" class="download">&nbsp;</a>',
