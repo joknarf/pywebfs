@@ -602,7 +602,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         fpath = self.translate_path(self.path)
         if mimetype == "application/octet-stream" and is_binary_file(fpath) == False:
             mimetype = "text/plain"
-        self.log_message(mimetype)
+        #self.log_message(mimetype)
         if mimetype in ["text/plain"]:
             self.send_header("Content-Disposition", "inline")
         self.send_header("Content-Type", mimetype)
@@ -631,11 +631,11 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         self.write_html(file_head())
         nbfiles = 0
         size = 0
-        self.log_message(path)
+        #self.log_message(path)
         for dirpath, dirnames, filenames in os.walk(path):
             for filename in filenames:
                 if all([bool(x.search(filename)) for x in rexp]):
-                    self.log_message(dirpath[len(path):])
+                    #self.log_message(dirpath[len(path):])
                     info = file_tr(dirpath, filename, dirpath[len(path):])
                     size += info["size"]
                     nbfiles += info["file"]
