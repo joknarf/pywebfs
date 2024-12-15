@@ -514,7 +514,7 @@ def file_folderup(path):
         '<td></td>',
         '<td></td>',
         '<td>%s</td>' % get_username(stat.st_uid),
-        '<td>%s</td>' % get_groupname(stat.st_uid),
+        '<td>%s</td>' % get_groupname(stat.st_gid),
         '<td>%s</td>' % convert_mode(stat.st_mode),
         '<td>%s</td>' % datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
         '<td></td>',
