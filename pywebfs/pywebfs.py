@@ -171,6 +171,7 @@ CSS = f"""
         background-size: 18px 18px;
         background-position-y: center;
         cursor:pointer;
+        width: 25px;
     }}
     .path {{
         vertical-align: middle;
@@ -816,9 +817,9 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         htmldoc += '<div class="header">\n'
         htmldoc += '<form name="search">\n'
         htmldoc += f'  <input type="text" name="search" id="search" autofocus autocomplete="off">\n'
-        htmldoc += '  <button type="submit" class="search" title="Search filenames in folder and subfolders">&nbsp;&nbsp;&nbsp;</button>\n'
+        htmldoc += '  <button type="submit" class="search" title="Search filenames in folder and subfolders"></button>\n'
         if not NO_SEARCH_TXT:
-            htmldoc += '  <button type="submit" name="searchtxt" value=1 class="searchtxt" title="Search in text files">&nbsp;&nbsp;&nbsp;</button>\n'
+            htmldoc += '  <button type="submit" name="searchtxt" value=1 class="searchtxt" title="Search in text files"></button>\n'
         htmldoc += f'  {href}\n'
         htmldoc += '</form>\n</div>\n</div>\n'
         htmldoc += '<div id="list">\n'
