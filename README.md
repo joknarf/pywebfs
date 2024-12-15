@@ -30,11 +30,12 @@ $ pywebfs
 * Serve static files
 * Download folder as zip file
 * Filter files
-* Search files recursively multiple word any order
+* Search files recursively multiple word any order (disable feature with --nosearch)
 * Search text in files recursively
 * Basic Auth support (single user)
 * HTTPS support
 * HTTPS self-signed certificate generator
+* Display owner/group/permissions (POSIX) (disable feature with --noperm)
 * Can be started as a daemon (POSIX)
 
 ## Customize server
