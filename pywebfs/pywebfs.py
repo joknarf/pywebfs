@@ -524,9 +524,11 @@ def file_folderup(path):
     return "<tr>\n  " + "  \n".join(fields) + "</tr>"
 
 
-def file_tr(path, name):
-    fullname = os.path.join(path, name)
+def file_tr(path, name, link=None):
+    fullname = path.rstrip("/") + "/" + name
     displayname = linkname = name
+    if link:
+        linkname = link + "/" + name
     size_unit = ("","")
     ext = ""
     stat = os_stat(fullname)
@@ -633,7 +635,8 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         for dirpath, dirnames, filenames in os.walk(path):
             for filename in filenames:
                 if all([bool(x.search(filename)) for x in rexp]):
-                    info = file_tr(dirpath, filename)
+                    self.log_message(dirpath[len(path):])
+                    info = file_tr(dirpath, filename, dirpath[len(path):])
                     size += info["size"]
                     nbfiles += info["file"]
                     self.write_html(info["tr"])
