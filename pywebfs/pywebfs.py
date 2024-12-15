@@ -29,8 +29,19 @@ import ipaddress
 import secrets
 from socket import gethostname, gethostbyname_ex
 from shutil import make_archive
+try:
+    import pwd
+    import grp
+    NO_PERM = False
+except:
+    NO_PERM = True
+    pass
 
-PYWFSDIR = os.path.expanduser("~/.pywebfs")
+
+PYWFSDIR = os.path.expanduser("~/")
+if os.path.isdir(f"{PYWFSDIR}/.config"):
+    PYWFSDIR += '/.config'
+PYWFSDIR += "/.pywebfs"
 
 NO_SEARCH_TXT = False
 
@@ -87,7 +98,7 @@ CSS = f"""
         cursor: pointer;
     }}
     th.size {{
-        text-align: center;
+        text-align: right;
     }}
     #files tr td a {{
         color: #0366d6;
@@ -102,7 +113,7 @@ CSS = f"""
     #files tr td:nth-child(5) {{
         font-variant-numeric: tabular-nums;    
     }}
-
+    
     .header {{
         background-color: #aaa;
         z-index: 2;
@@ -247,14 +258,15 @@ HTML = f"""
 <!DOCTYPE HTML>
 <html lang="en">
 <head>
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/style.css">
-<meta charset="{ENC}">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <meta charset="{ENC}">
 """
 #<link rel="stylesheet" href="/style.css">
 # <style>
 # {CSS}
 # </style>
+
 
 JAVASCRIPT = """
 <script>
@@ -306,6 +318,7 @@ RE_AGENT = re.compile(r"(Edg|Chrome|Safari|Firefox|Opera|Lynx)[^ ]*")
 class BadStat:
     st_size = 0
     st_mtime = 0
+    st_mode = 0
 
 def accent_re(rexp):
     """ regexp search any accent """
@@ -324,6 +337,7 @@ def fs_path(path):
     except UnicodeDecodeError:
         return urllib.parse.unquote(path)
 
+
 def convert_size(size_bytes):
     if size_bytes == 0:
         return ("0","B")
@@ -338,6 +352,30 @@ def convert_size(size_bytes):
     return (str(round(double_size,1)), size_name[i])
 
 
+def convert_mode(st_mode):
+    permissions = ''
+    for i in range(9):
+        permissions += ('rwxrwxrwx'[i] if (st_mode & (0o400 >> i)) else '-')
+    return permissions
+
+
+def get_username(uid):
+    if NO_PERM:
+        return None
+    try:
+        return pwd.getpwuid(uid).pw_name
+    except KeyError:
+        return None
+
+def get_groupname(gid):
+    if NO_PERM:
+        return None
+    try:
+        return grp.getgrgid(gid).gr_name
+    except KeyError:
+        return None
+
+
 def os_stat(path):
     try:
         return os.stat(path)
@@ -349,10 +387,13 @@ def is_binary_file(path):
     if not os.path.isfile(path):
         return None
     textchars = bytearray({7,8,9,10,12,13,27} | set(range(0x20, 0x100)) - {0x7f})
-    with open(path, "rb") as fd:
-        bytes = fd.read(1024)
-    return bool(bytes.translate(None, textchars))
-
+    try:
+        with open(path, "rb") as fd:
+            bytes = fd.read(1024)
+        return bool(bytes.translate(None, textchars))
+    except PermissionError:
+        return True
+    
 def grep(rex, path, first=False):
     if is_binary_file(path):
         return []
@@ -445,6 +486,43 @@ def generate_selfsigned_cert(hostname, ip_addresses=None, key=None):
 
     return cert_pem, key_pem
 
+def file_head():
+    fields = [
+            '<th class="name"><div class="name sort">Name</div><div class="info" id="nameinfo">loading</div></th>',
+            '<th><span class="sort">Ext</span></th>',
+            '<th class="size"><span class="sort">Size</span></th>',
+            '<th></th>',
+            '<th>Owner</th>',
+            '<th>Group</th>',
+            '<th>Perm</th>',
+            '<th><span class="sort">Modified</span></th>',
+            '<th style=width:100%></th>',
+    ]
+    if NO_PERM:
+        fields = fields[:4] + fields[7:]
+    return "<tr>\n  " + "\n  ".join(fields) + "\n</tr>\n"
+
+def file_folderup(path):
+    if path == "./":
+        return ""
+    parentdir = os.path.dirname(path[1:].rstrip("/")).rstrip("/") + "/"
+    stat = os_stat("."+parentdir)
+    fields = [
+        '<td><a href="%s" class="upfolder">..</a></td>' % urllib.parse.quote(parentdir , errors='surrogatepass'),
+        '<td></td>',
+        '<td></td>',
+        '<td></td>',
+        '<td></td>',
+        '<td></td>',
+        '<td></td>',
+        '<td>%s</td>' % datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
+        '<td></td>',
+    ]
+    if NO_PERM:
+        fields = fields[:4] + fields[7:]
+    return "<tr>\n  " + "  \n".join(fields) + "</tr>"
+
+
 def file_tr(path, name):
     fullname = os.path.join(path, name)
     displayname = linkname = name
@@ -473,20 +551,25 @@ def file_tr(path, name):
         size_unit = convert_size(stat.st_size)
         ext = os.path.splitext(displayname)[1][1:] or " "
         displayname = os.path.splitext(displayname)[0]
+    permissions = convert_mode(stat.st_mode)
     linkname = urllib.parse.quote(linkname, errors="surrogatepass")
+    fields = [
+        '<td><a href="%s" class="%s">%s</a></td>' % (linkname, img, html.escape(displayname, quote=False)),
+        '<td>%s</td>' % html.escape(ext, quote=False),
+        '<td title="%s">%s</td>' % (fsize, size_unit[0]),
+        '<td>%s</td>' % size_unit[1],
+        '<td>%s</td>' % get_username(stat.st_uid),
+        '<td>%s</td>' % get_groupname(stat.st_uid),
+        '<td>%s</td>' % permissions,
+        '<td>%s</td>' % datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
+        '<td>%s</td>' % f'<a href="{linkname}?download=1" class="download">&nbsp;</a>',
+    ]
+    if NO_PERM:
+        fields = fields[:4] + fields[7:]
     return {
         "file": file,
         "size": size,
-        "tr" : '<tr><td><a href="%s" class="%s">%s</a></td><td>%s</td><td title="%s">%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n'
-        % (
-            linkname,
-            img,
-            html.escape(displayname, quote=False),
-            html.escape(ext, quote=False),
-            fsize, size_unit[0], size_unit[1],
-            datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
-            f'<a href="{linkname}?download=1" class="download">&nbsp;</a>',
-        )
+        "tr" : "<tr>\n  " + "\n  ".join(fields) + "\n</tr>\n"
     }
 
 
@@ -541,7 +624,8 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 rexp.append(re.compile(accent_re(s), re.IGNORECASE))
             except:
                 rexp.append(re.compile(accent_re(re.escape(s))))
-        self.write_html('<table id="files">\n<tr><th class="name"><div class="name sort">Name</div><div class="info" id="nameinfo">loading</div></th><th>Ext</th><th class="size"><span class="sort">Size</span></th><th></th><th><span class="sort">Modified</th><th style=width:100%></th></tr>')
+        self.write_html('<table id="files">\n')
+        self.write_html(file_head())
         nbfiles = 0
         size = 0
         self.log_message(path)
@@ -606,26 +690,16 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         interface the same as for send_head().
 
         """
+        self.write_html('<table id="files">\n')
+        self.write_html(file_head())
+        self.write_html(file_folderup(path))
         try:
             list = os.listdir(path)
         except OSError:
-            self.send_error(HTTPStatus.NOT_FOUND, "No permission to list directory")
-            return ""
-#        self.write_html('<table id="files">\n<thead><tr><th class="name"><div class="name">Name</div><div class="info" id="nameinfo">loading</div></th><th class="size" colspan=2>Size</th><th>Modified</th><th style=width:100%></th></tr></thead><tbody>')
-        self.write_html('<table id="files">\n<tr><th class="name"><div class="name sort">Name</div><div class="info" id="nameinfo">loading</div></th><th><span class="sort">Ext</span></th><th class="size"><span class="sort">Size</span></th><th></th><th><span class="sort">Modified</span></th><th style=width:100%></th></tr>')
-        if path != "./":
-            parentdir = os.path.dirname(path[1:].rstrip("/"))
-            if parentdir != "/":
-                parentdir += "/"
-            stat = os_stat("."+parentdir)
-            self.write_html(
-                '<tr><td><a href="%s" class="upfolder">..</a></td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td></td></tr>\n'
-                % (
-                    urllib.parse.quote(parentdir , errors='surrogatepass'),
-                    "", "", "",
-                    datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M")
-                )
-            )
+            self.write_html("<tr><td>No permission to list directory</td></tr>")
+            self.write_html("</table>\n")
+            self.write_html('<p id="info">0 file - 0 B</p>\n')
+            return
         list.sort(key=lambda a: a.lower())
         nbfiles = 0
         size = 0
@@ -634,9 +708,9 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             size += info["size"]
             nbfiles += info["file"]
             self.write_html(info["tr"])
-        self.write_html("</table>")
+        self.write_html("</table>\n")
         s = "s" if nbfiles>1 else ""
-        self.write_html(f'<p id="info">{nbfiles} file{s} - {" ".join(convert_size(size))}</p>')
+        self.write_html(f'<p id="info">{nbfiles} file{s} - {" ".join(convert_size(size))}</p>\n')
 
     def download(self, path):
         if os.path.isdir(path):
@@ -714,15 +788,21 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         search = q.get("search", [""])[0]
         searchtxt = q.get("searchtxt", [""])[0]
         download = q.get("download", [""])[0]
-        path = displaypath = fs_path(p.path)
+        noperm = q.get("noperm", [""])[0]
+        global NO_PERM
+        if noperm == "1":
+            NO_PERM = True
+        elif noperm == "0":
+            NO_PERM = False
+        path = fs_path(p.path)
         if download:
             return self.download("."+path)
         if not os.path.isdir("."+path):
             return super().do_GET()
         title = f"{self.server.title} - {html.escape(path, quote=False)}"
         htmldoc = HTML
-        htmldoc += f"<title>{title}</title>\n</head>"
-        htmldoc += '<body onload="setmask()">'
+        htmldoc += f"  <title>{title}</title>\n</head>\n"
+        htmldoc += '<body onload="setmask()">\n'
 
         href = '<a href="/" class="home" title="Home">&nbsp;</a>'
         fpath = "/"
@@ -732,18 +812,18 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 urllib.parse.quote(fpath, errors="surrogatepass"),
                 html.escape(dir, quote=False),
             )
-        htmldoc += '<div id="mask">'
-        htmldoc += '<div class="header">'
-        htmldoc += '<form name="search">'
-        htmldoc += f'<input type="text" name="search" id="search" autofocus autocomplete="off">'
-        htmldoc += '<button type="submit" class="search" title="Search filenames in folder and subfolders">&nbsp;&nbsp;&nbsp;</button>'
+        htmldoc += '<div id="mask">\n'
+        htmldoc += '<div class="header">\n'
+        htmldoc += '<form name="search">\n'
+        htmldoc += f'  <input type="text" name="search" id="search" autofocus autocomplete="off">\n'
+        htmldoc += '  <button type="submit" class="search" title="Search filenames in folder and subfolders">&nbsp;&nbsp;&nbsp;</button>\n'
         if not NO_SEARCH_TXT:
-            htmldoc += '<button type="submit" name="searchtxt" value=1 class="searchtxt" title="Search in text files">&nbsp;&nbsp;&nbsp;</button>'
-        htmldoc += f'{href}\n</form>'
-        htmldoc += '</div></div>'
-        htmldoc += '<div id="list">'
+            htmldoc += '  <button type="submit" name="searchtxt" value=1 class="searchtxt" title="Search in text files">&nbsp;&nbsp;&nbsp;</button>\n'
+        htmldoc += f'  {href}\n'
+        htmldoc += '</form>\n</div>\n</div>\n'
+        htmldoc += '<div id="list">\n'
 
-        enddoc = "\n</div>"
+        enddoc = "</div>\n"
 
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-type", "text/html")
@@ -756,6 +836,8 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 self.search_files(search, "." + path)
             elif search:
                 self.find_files(search, "." + path)
+            else:
+                self.list_directory("." + path)
         else:
             self.list_directory("." + path)
         self.write_html(enddoc)
@@ -856,7 +938,7 @@ def init_server(hostname, args):
 
 def main():
     """start http server according to args"""
-    global NO_SEARCH_TXT
+    global NO_SEARCH_TXT, NO_PERM
 
     parser = argparse.ArgumentParser(prog="pywebfs")
     parser.add_argument(
@@ -881,7 +963,8 @@ def main():
     parser.add_argument("-P", "--password", type=str, help="password")
     parser.add_argument("-s", "--start", action="store_true", help="Start as a daemon")
     parser.add_argument("-g", "--gencert", action="store_true", help="https server self signed cert")
-    parser.add_argument("-n", "--nosearch", action="store_true", help="No search in text files button")
+    parser.add_argument("--nosearch", action="store_true", help="No search in text files button")
+    parser.add_argument("--noperm", action="store_true", help="No search in text files button")
     parser.add_argument("action", nargs="?", help="daemon action start/stop/restart/status", choices=["start","stop","restart","status"])
     args = parser.parse_args()
     if os.path.isdir(args.dir):
@@ -894,6 +977,8 @@ def main():
         print(f"Error: {args.dir} not found", file=sys.stderr)
         sys.exit(1)
     NO_SEARCH_TXT = args.nosearch
+    if args.noperm:
+        NO_PERM = True
     hostname = resolve_hostname(gethostname())
     if not os.path.exists(PYWFSDIR):
         os.mkdir(PYWFSDIR, mode=0o700)
