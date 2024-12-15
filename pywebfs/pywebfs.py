@@ -528,7 +528,7 @@ def file_tr(path, name, link=None):
     fullname = path.rstrip("/") + "/" + name
     displayname = linkname = name
     if link:
-        linkname = link + "/" + name
+        linkname = link.replace("\\", "/") + "/" + name
     size_unit = ("","")
     ext = ""
     stat = os_stat(fullname)
