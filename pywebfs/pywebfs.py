@@ -513,9 +513,9 @@ def file_folderup(path):
         '<td></td>',
         '<td></td>',
         '<td></td>',
-        '<td></td>',
-        '<td></td>',
-        '<td></td>',
+        '<td>%s</td>' % get_username(stat.st_uid),
+        '<td>%s</td>' % get_groupname(stat.st_uid),
+        '<td>%s</td>' % convert_mode(stat.st_mode),
         '<td>%s</td>' % datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
         '<td></td>',
     ]
@@ -554,7 +554,6 @@ def file_tr(path, name, link=None):
         size_unit = convert_size(stat.st_size)
         ext = os.path.splitext(displayname)[1][1:] or " "
         displayname = os.path.splitext(displayname)[0]
-    permissions = convert_mode(stat.st_mode)
     linkname = urllib.parse.quote(linkname, errors="surrogatepass")
     fields = [
         '<td><a href="%s" class="%s">%s</a></td>' % (linkname, img, html.escape(displayname, quote=False)),
@@ -563,7 +562,7 @@ def file_tr(path, name, link=None):
         '<td>%s</td>' % size_unit[1],
         '<td>%s</td>' % get_username(stat.st_uid),
         '<td>%s</td>' % get_groupname(stat.st_uid),
-        '<td>%s</td>' % permissions,
+        '<td>%s</td>' % convert_mode(stat.st_mode),
         '<td>%s</td>' % datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
         '<td>%s</td>' % f'<a href="{linkname}?download=1" class="download">&nbsp;</a>',
     ]
