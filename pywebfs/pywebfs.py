@@ -531,58 +531,11 @@ def file_folderup(path):
         fields = fields[:4] + fields[7:]
     return "<tr>\n  " + "  \n".join(fields) + "</tr>"
 
-def file_tr(path, name, link=None):
-    if hidden(name):
-        return {"file": False, "size": 0, "tr":""}
-    fullname = path.rstrip("/") + "/" + name
-    displayname = linkname = name
-    if link:
-        linkname = link.replace("\\", "/") + "/" + name
-    size_unit = ("","")
-    ext = ""
-    stat = os_stat(fullname)
-    file = False
-    size = 0
-    if os.path.islink(fullname):
-        img = "link"
-        fsize = 0
-        if os.path.isdir(fullname):
-            linkname = name + "/"
-        else:
-            ext = os.path.splitext(displayname)[1][1:] or " "
-            displayname = os.path.splitext(displayname)[0]
-    elif os.path.isdir(fullname):
-        linkname = name + "/"
-        img = "folder"
-        fsize = -1
-    else:
-        img = "file"
-        file = True
-        fsize = stat.st_size
-        size = stat.st_size
-        size_unit = convert_size(stat.st_size)
-        ext = os.path.splitext(displayname)[1][1:] or " "
-        displayname = os.path.splitext(displayname)[0]
-    linkname = urllib.parse.quote(linkname, errors="surrogatepass")
-    fields = [
-        '<td><a href="%s" class="%s">%s</a></td>' % (linkname, img, html.escape(displayname, quote=False)),
-        '<td>%s</td>' % html.escape(ext, quote=False),
-        '<td title="%s">%s</td>' % (fsize, size_unit[0]),
-        '<td>%s</td>' % size_unit[1],
-        '<td>%s</td>' % get_username(stat.st_uid),
-        '<td>%s</td>' % get_groupname(stat.st_gid),
-        '<td>%s</td>' % convert_mode(stat.st_mode),
-        '<td>%s</td>' % datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
-        '<td>%s</td>' % f'<a href="{linkname}?download=1" class="download">&nbsp;</a>',
-    ]
-    if NO_PERM:
-        fields = fields[:4] + fields[7:]
-    return {
-        "file": file,
-        "size": size,
-        "tr" : "<tr>\n  " + "\n  ".join(fields) + "\n</tr>\n"
-    }
-
+def os_scandir(path):
+    try:
+        return os.scandir(path)
+    except:
+        return []
 
 class HTTPFileHandler(SimpleHTTPRequestHandler):
     """Class handler for HTTP"""
@@ -621,11 +574,71 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             self.send_header("Pragma", "no-cache")
             self.send_header("Expires", "0")
 
-
     def end_headers(self):
         self.mime_header()
         super().end_headers()
 
+    def file_tr(self, entry, link=None):
+        if hidden(entry.name):
+            return False, 0
+        displayname = linkname = entry.name
+        if link:
+            linkname = link.replace("\\", "/")
+        size_unit = ("","")
+        ext = ""
+        stat = entry.stat()
+        file = False
+        size = 0
+        if entry.is_symlink():
+            img = "link"
+            fsize = 0
+            if entry.is_dir():
+                linkname += "/"
+            else:
+                ext = os.path.splitext(displayname)[1][1:] or " "
+                displayname = os.path.splitext(displayname)[0]
+        elif entry.is_dir():
+            linkname += "/"
+            img = "folder"
+            fsize = -1
+        else:
+            img = "file"
+            file = True
+            fsize = stat.st_size
+            size = stat.st_size
+            size_unit = convert_size(stat.st_size)
+            ext = os.path.splitext(displayname)[1][1:] or " "
+            displayname = os.path.splitext(displayname)[0]
+        linkname = urllib.parse.quote(linkname, errors="surrogatepass")
+        fields = [
+            '<td><a href="%s" class="%s">%s</a></td>' % (linkname, img, html.escape(displayname, quote=False)),
+            '<td>%s</td>' % html.escape(ext, quote=False),
+            '<td title="%s">%s</td>' % (fsize, size_unit[0]),
+            '<td>%s</td>' % size_unit[1],
+            '<td>%s</td>' % get_username(stat.st_uid),
+            '<td>%s</td>' % get_groupname(stat.st_gid),
+            '<td>%s</td>' % convert_mode(stat.st_mode),
+            '<td>%s</td>' % datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
+            '<td>%s</td>' % f'<a href="{linkname}?download=1" class="download">&nbsp;</a>',
+        ]
+        if NO_PERM:
+            fields = fields[:4] + fields[7:]
+        self.write_html("<tr>\n  " + "\n  ".join(fields) + "\n</tr>\n")
+        return file, size
+
+    def find_walk(self, path, rexp, lenpath, infos=[0,0]):
+        for entry in os_scandir(path):
+            if hidden(entry.name):
+                continue
+            if entry.is_dir(follow_symlinks=False):
+                self.find_walk(entry.path, rexp, lenpath, infos)
+            if all([bool(x.search(entry.name)) for x in rexp]):
+                #self.log_message(dirpath[len(path):])
+                file, size = self.file_tr(entry, entry.path[lenpath:])
+                infos[0] += file
+                infos[1] += size
+        return infos
+            
 
     def find_files(self, search, path):
         """ find files recursively with name contains any word in search"""
@@ -637,40 +650,23 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 rexp.append(re.compile(accent_re(re.escape(s))))
         self.write_html('<table id="files">\n')
         self.write_html(file_head())
-        nbfiles = 0
-        size = 0
-        #self.log_message(path)
-        for dirpath, dirnames, filenames in os.walk(path):
-            if hidden(os.path.basename(dirpath)):
-                continue
-            for filename in filenames:
-                if all([bool(x.search(filename)) for x in rexp]):
-                    #self.log_message(dirpath[len(path):])
-                    info = file_tr(dirpath, filename, dirpath[len(path):])
-                    size += info["size"]
-                    nbfiles += info["file"]
-                    self.write_html(info["tr"])
+        nbfiles, size = self.find_walk(path, rexp, len(path))
         self.write_html("</table>")
         s = "s" if nbfiles>1 else ""            
         self.write_html(f'<p id="info">{nbfiles} file{s} - {" ".join(convert_size(size))}</p>')
 
-    def search_files(self, search, path):
-        """ find files recursively containing search pattern"""
-        
-        try:
-            rex = re.compile(accent_re(search), re.IGNORECASE)
-        except:
-            rex = re.compile(accent_re(re.escape(search)), re.IGNORECASE)
-        self.write_html('<table class="searchresult">\n<th class="name"><div class="name">Name</div><div class="info" id="nameinfo">loading</div></th><th>Text</th><th style=width:100%></th></tr>')
-        nbfiles = 0
-        for dirpath, dirnames, filenames in os.walk(path):
-            for filename in filenames:
-                fpath = os.path.join(dirpath, filename)
-                found = grep(rex, fpath, first=False)
+    def search_walk(self, path, rex, lenpath, infos=[0,0]):
+        for entry in os_scandir(path):
+            if hidden(entry.name):
+                continue
+            if entry.is_dir(follow_symlinks=False):
+                self.search_walk(entry.path, rex, lenpath, infos)
+            else:
+                found = grep(rex, entry.path, first=False)
                 if found:
-                    nbfiles += 1
-                    fpath = fpath.replace("\\", "/")[1:]
-                    urlpath = urllib.parse.quote(fpath, errors="surrogatepass")
+                    infos[0] += 1
+                    infos[1] += entry.stat().st_size
+                    urlpath = urllib.parse.quote(entry.path.replace("\\","/")[1:], errors="surrogatepass")
                     self.write_html('''
                         <tr>
                             <td><a href="%s" class="file" title="%s">%s</a></td>
@@ -681,13 +677,25 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                         % (
                             urlpath,
                             urlpath,
-                            html.escape(filename, quote=False),
+                            html.escape(entry.name, quote=False),
                             "\n".join(found)
                         )
                     )
+        return infos
+
+
+    def search_files(self, search, path):
+        """ find files recursively containing search pattern"""
+        
+        try:
+            rex = re.compile(accent_re(search), re.IGNORECASE)
+        except:
+            rex = re.compile(accent_re(re.escape(search)), re.IGNORECASE)
+        self.write_html('<table class="searchresult">\n<th class="name"><div class="name">Name</div><div class="info" id="nameinfo">loading</div></th><th>Text</th><th style=width:100%></th></tr>')
+        nbfiles, size = self.search_walk(path, rex, len(path))
         self.write_html('</table>')
         s = "s" if nbfiles>1 else ""
-        self.write_html(f'<p id="info">{nbfiles} file{s}</p>')
+        self.write_html(f'<p id="info">{nbfiles} file{s} - {" ".join(convert_size(size))}</p>')
     
     def write_html(self, data):
         encoded = data.encode(ENC, "surrogateescape")
@@ -708,20 +716,19 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         self.write_html(file_head())
         self.write_html(file_folderup(path))
         try:
-            list = os.listdir(path)
+            entries = os_scandir(path)
         except OSError:
             self.write_html("<tr><td>No permission to list directory</td></tr>")
             self.write_html("</table>\n")
             self.write_html('<p id="info">0 file - 0 B</p>\n')
             return
-        list.sort(key=lambda a: a.lower())
+        entries = sorted(entries, key=lambda entry: (not entry.is_dir(), entry.name))
         nbfiles = 0
         size = 0
-        for name in list:
-            info = file_tr(path, name)
-            size += info["size"]
-            nbfiles += info["file"]
-            self.write_html(info["tr"])
+        for entry in entries:
+            file, fsize = self.file_tr(entry)
+            size += fsize
+            nbfiles += file
         self.write_html("</table>\n")
         s = "s" if nbfiles>1 else ""
         self.write_html(f'<p id="info">{nbfiles} file{s} - {" ".join(convert_size(size))}</p>\n')
