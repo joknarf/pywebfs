@@ -722,7 +722,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             self.write_html("</table>\n")
             self.write_html('<p id="info">0 file - 0 B</p>\n')
             return
-        entries = sorted(entries, key=lambda entry: (not entry.is_dir(), entry.name))
+        entries = sorted(entries, key=lambda entry: (not entry.is_dir(), entry.name.lower()))
         nbfiles = 0
         size = 0
         for entry in entries:
