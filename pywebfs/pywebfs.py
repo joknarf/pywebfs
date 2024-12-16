@@ -110,6 +110,9 @@ CSS = f"""
         padding-right: 0px;
         text-align: right;
     }}
+    #files tr td:nth-child(4), #files tr th:nth-child(4) {{
+        padding-left: 5px;
+    }}
     
     #files tr td {{
         font-variant-numeric: tabular-nums;    
