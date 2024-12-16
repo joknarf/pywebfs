@@ -106,7 +106,7 @@ CSS = f"""
         color: #0366d6;
     }}
     /* size num */
-    #files tr td:nth-child(3) {{
+    #files tr td:nth-child(3), #files tr th:nth-child(3) {{
         padding-right: 0px;
         text-align: right;
     }}
