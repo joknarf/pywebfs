@@ -107,12 +107,11 @@ CSS = f"""
     }}
     /* size num */
     #files tr td:nth-child(3) {{
-        font-variant-numeric: tabular-nums;
         padding-right: 0px;
         text-align: right;
     }}
-    /* date */
-    #files tr td:nth-child(5) {{
+    
+    #files tr td {{
         font-variant-numeric: tabular-nums;    
     }}
     
