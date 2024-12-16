@@ -599,7 +599,8 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         displayname = linkname = entry.name
         if link:
             linkname = link.replace("\\", "/")
-        size_unit = ("","")
+        dispsize = ""
+        unit = ""
         ext = ""
         stat = entry.stat()
         file = False
@@ -615,21 +616,23 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         elif entry.is_dir():
             linkname += "/"
             img = "folder"
-            fsize = -1
+            dispsize = len(tuple(os_scandir(entry.path)))
+            fsize = f"-{dispsize}"
+            unit = "inod"
         else:
             img = "file"
             file = True
             fsize = stat.st_size
             size = stat.st_size
-            size_unit = convert_size(stat.st_size)
+            dispsize, unit = convert_size(stat.st_size)
             ext = os.path.splitext(displayname)[1][1:] or " "
             displayname = os.path.splitext(displayname)[0]
         linkname = urllib.parse.quote(linkname, errors="surrogatepass")
         fields = [
             '<td><a href="%s" class="%s">%s</a></td>' % (linkname, img, html.escape(displayname, quote=False)),
             '<td>%s</td>' % html.escape(ext, quote=False),
-            '<td title="%s">%s</td>' % (fsize, size_unit[0]),
-            '<td>%s</td>' % size_unit[1],
+            '<td title="%s">%s</td>' % (fsize, dispsize),
+            '<td>%s</td>' % unit,
             '<td>%s</td>' % get_username(stat.st_uid),
             '<td>%s</td>' % get_groupname(stat.st_gid),
             '<td>%s</td>' % convert_mode(stat.st_mode),
