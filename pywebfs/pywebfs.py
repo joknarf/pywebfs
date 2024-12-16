@@ -534,8 +534,8 @@ def file_folderup(path):
     fields = [
         '<td><a href="%s" class="upfolder">..</a></td>' % urllib.parse.quote(parentdir , errors='surrogatepass'),
         '<td></td>',
-        '<td></td>',
-        '<td></td>',
+        '<td>%s</td>' % len(tuple(os_scandir("."+parentdir))),
+        '<td>items</td>',
         '<td>%s</td>' % get_username(stat.st_uid),
         '<td>%s</td>' % get_groupname(stat.st_gid),
         '<td>%s</td>' % convert_mode(stat.st_mode),
@@ -618,7 +618,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             img = "folder"
             dispsize = len(tuple(os_scandir(entry.path)))
             fsize = f"-{dispsize}"
-            unit = "inod"
+            unit = "items"
         else:
             img = "file"
             file = True
