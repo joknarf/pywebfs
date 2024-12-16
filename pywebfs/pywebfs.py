@@ -398,7 +398,7 @@ def is_binary_file(path):
         return True
     
 def grep(rex, path, first=False):
-    if is_binary_file(path):
+    if is_binary_file(path) != False:
         return []
     founds = []
     with open(path, "r") as fd:
@@ -626,14 +626,13 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         self.write_html("<tr>\n  " + "\n  ".join(fields) + "\n</tr>\n")
         return file, size
 
-    def find_walk(self, path, rexp, lenpath, infos=[0,0]):
+    def find_walk(self, path, rexp, lenpath, infos):
         for entry in os_scandir(path):
             if hidden(entry.name):
                 continue
             if entry.is_dir(follow_symlinks=False):
                 self.find_walk(entry.path, rexp, lenpath, infos)
             if all([bool(x.search(entry.name)) for x in rexp]):
-                #self.log_message(dirpath[len(path):])
                 file, size = self.file_tr(entry, entry.path[lenpath:])
                 infos[0] += file
                 infos[1] += size
@@ -650,23 +649,24 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 rexp.append(re.compile(accent_re(re.escape(s))))
         self.write_html('<table id="files">\n')
         self.write_html(file_head())
-        nbfiles, size = self.find_walk(path, rexp, len(path))
+        nbfiles, size = self.find_walk(path, rexp, len(path), [0,0])
         self.write_html("</table>")
         s = "s" if nbfiles>1 else ""            
         self.write_html(f'<p id="info">{nbfiles} file{s} - {" ".join(convert_size(size))}</p>')
 
-    def search_walk(self, path, rex, lenpath, infos=[0,0]):
+    def search_walk(self, path, rex, lenpath, infos):
         for entry in os_scandir(path):
             if hidden(entry.name):
                 continue
             if entry.is_dir(follow_symlinks=False):
                 self.search_walk(entry.path, rex, lenpath, infos)
             else:
-                found = grep(rex, entry.path, first=False)
+                path = entry.path.replace("\\", "/")
+                found = grep(rex, path, first=False)
                 if found:
                     infos[0] += 1
                     infos[1] += entry.stat().st_size
-                    urlpath = urllib.parse.quote(entry.path.replace("\\","/")[1:], errors="surrogatepass")
+                    urlpath = urllib.parse.quote(path[1:], errors="surrogatepass")
                     self.write_html('''
                         <tr>
                             <td><a href="%s" class="file" title="%s">%s</a></td>
@@ -692,7 +692,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         except:
             rex = re.compile(accent_re(re.escape(search)), re.IGNORECASE)
         self.write_html('<table class="searchresult">\n<th class="name"><div class="name">Name</div><div class="info" id="nameinfo">loading</div></th><th>Text</th><th style=width:100%></th></tr>')
-        nbfiles, size = self.search_walk(path, rex, len(path))
+        nbfiles, size = self.search_walk(path, rex, len(path), [0,0])
         self.write_html('</table>')
         s = "s" if nbfiles>1 else ""
         self.write_html(f'<p id="info">{nbfiles} file{s} - {" ".join(convert_size(size))}</p>')
