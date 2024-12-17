@@ -754,7 +754,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         s = "s" if nbfiles>1 else ""
         self.write_html(f'<p id="info">{nbfiles} file{s} - {" ".join(convert_size(size))}</p>\n')
 
-    def download(self, path):
+    def download(self, path, inline=False):
         if os.path.isdir(path):
             tmpdir = os.path.expanduser("~/.pywebfs")
             basedir = os.path.basename(path.rstrip("/"))
@@ -774,8 +774,11 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-Type", self.guess_type(self.path))
             self.send_header("Content-Length", os_stat(path).st_size)
-            self.send_header("Content-Disposition", 'attachment')
-            super().end_headers()
+            if inline:
+                self.end_headers()
+            else:
+                self.send_header("Content-Disposition", 'attachment')
+                super().end_headers()
             with open(path, 'rb') as f:
                 self.copyfile(f, self.wfile)
         else:
@@ -840,10 +843,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         if download:
             return self.download("."+path)
         if not os.path.isdir("."+path):
-            try:
-                return super().do_GET()
-            except:
-                return
+            return self.download("."+path, inline=True)
         title = f"{self.server.title} - {html.escape(path, quote=False)}"
         htmldoc = HTML
         htmldoc += f"  <title>{title}</title>\n</head>\n"
