@@ -20,6 +20,7 @@ except:
         HTTPServer as ThreadingHTTPServer,
         SimpleHTTPRequestHandler,
     )
+from http.cookies import SimpleCookie
 from http import HTTPStatus
 import ssl
 import urllib.parse
@@ -37,7 +38,6 @@ try:
 except:
     NO_PERM = True
     pass
-
 
 PYWFSDIR = os.path.expanduser("~/")
 if os.path.isdir(f"{PYWFSDIR}/.config"):
@@ -165,15 +165,19 @@ CSS = f"""
         appearance: none;
         border-radius: 15px;
         padding: 3px;
-        text-indent: 20px;
+        padding-right: 13px;
         border: 1px #eee solid;
         height: 15px;
         font-size: 15px;
+        outline: none;
+        text-indent: 10px;
+    }}
+    #search {{
         background: url('data:image/svg+xml;utf8,{SEARCH_CSS}') no-repeat;
         background-size: 18px 18px;
         background-position-y: center;
         background-position-x: 3px;
-        outline: none;
+        text-indent: 20px;
     }}
     .search {{
         background: url('data:image/svg+xml;utf8,{SEARCH_PLUS_CSS}') no-repeat;
@@ -262,6 +266,23 @@ CSS = f"""
         position: relative;
         top: 1px;
     }}
+    .form-container {{
+        margin: 10% auto;
+        padding: 10px;
+        display: block;
+        width:500px;
+        text-align:center;
+        background: #eee;
+        border-radius: 10px;
+
+        input {{
+            margin-bottom: 10px;
+        }}
+        #login {{
+            height: 25px;
+        }}
+    }}
+
     @media screen and (max-device-width: 480px){{
         body {{
             -webkit-text-size-adjust: 180%;
@@ -275,20 +296,36 @@ CSS = f"""
 """
 
 ENC = sys.getfilesystemencoding()
-HTML = f"""
+HTML = """
 <!DOCTYPE HTML>
 <html lang="en">
 <head>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/style.css">
-  <meta charset="{ENC}">
+  <meta charset="{charset}">
+  <title>{title}</title>
+</head>
 """
 #<link rel="stylesheet" href="/style.css">
 # <style>
 # {CSS}
 # </style>
 
-
+LOGIN = """
+<body>
+<div class="form-container">
+  <h2>{title}</h2>
+  <form method="post" action="/login">
+    <input #username type="text" name="username" placeholder="Username" autofocus tabindex="1">
+    <br />
+    <input #password type="password" name="password" placeholder="Password">
+    <br />
+    <input type="submit" id="login" value="Login">
+    <br />
+  </form>
+</div>
+</body>
+"""
 JAVASCRIPT = """
 <script>
     function setmask() {
@@ -592,9 +629,9 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             self.send_header("Pragma", "no-cache")
             self.send_header("Expires", "0")
 
-    def end_headers(self):
-        self.mime_header()
-        super().end_headers()
+#    def end_headers(self):
+#        self.mime_header()
+#        super().end_headers()
 
     def file_tr(self, entry, link=None):
         if hidden(entry.name):
@@ -766,7 +803,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             self.send_header("Content-type", "application/zip")
             self.send_header("Content-Length", str(fstat[6]))
             self.send_header("Content-Disposition", f'attachment; filename="{basedir}.zip"')
-            super().end_headers()
+            self.end_headers()
             with open(tmpzip, 'rb') as f:
                 self.copyfile(f, self.wfile)
             os.remove(tmpzip)
@@ -775,30 +812,40 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             self.send_header("Content-Type", self.guess_type(self.path))
             self.send_header("Content-Length", os_stat(path).st_size)
             if inline:
-                self.end_headers()
+                self.mime_header()
             else:
                 self.send_header("Content-Disposition", 'attachment')
-                super().end_headers()
+            self.end_headers()
             with open(path, 'rb') as f:
                 self.copyfile(f, self.wfile)
         else:
             self.send_error(HTTPStatus.NOT_FOUND, "File not found")
 
-    def do_HEAD(self):
-        self.send_response(HTTPStatus.OK)
-        self.send_header("Content-type", "text/html")
-        self.end_headers()
-
-    def do_AUTHHEAD(self):
-        self.send_response(HTTPStatus.UNAUTHORIZED)
-        self.send_header("WWW-Authenticate", 'Basic realm="Test"')
-        self.send_header("Content-type", "text/html")
-        self.end_headers()
+    def do_checkauth(self):
+        if self.path != '/login':
+            if self.is_authenticated():
+                return True
+            else:
+                if RE_AGENT.search(self.headers.get('User-Agent', '')):
+                    self.send_response(302)
+                    self.send_header('Location', '/login')
+                else:
+                    self.send_response(401)
+                    self.send_header('WWW-Authenticate', 'Basic realm="Acces restreint"')
+                self.end_headers()
+                return False
+        else:
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.write_html(HTML.format(title=self.server.title, charset=ENC))
+            self.write_html(LOGIN.format(title=self.server.title))
+            return False
 
     def do_GET(self):
         """do http calls"""
         user_agent = self.headers.get("User-Agent") or ""
-        #self.log_message(user_agent)
+        self.log_message(user_agent)
         browser = user_agent.split()[-1]
         if not browser.startswith("Edg"):
             m = RE_AGENT.search(user_agent)
@@ -811,16 +858,6 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             self.headers["Host"],
             self.path
         )
-        if self.server._auth:
-            if self.headers.get("Authorization") == None:
-                self.do_AUTHHEAD()
-                self.wfile.write(b"no auth header received")
-                return
-            elif self.headers.get("Authorization") != "Basic " + self.server._auth:
-                self.do_AUTHHEAD()
-                self.wfile.write(self.headers.get("Authorization").encode())
-                self.wfile.write(b"not authenticated")
-                return
 
         if self.path == "/favicon.ico":
             self.path = "/favicon.svg"
@@ -828,6 +865,9 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             return self._set_response(HTTPStatus.OK, FOLDER)
         elif self.path == "/style.css":
             return self._set_response(HTTPStatus.OK, CSS)
+        if self.server.userp[0]:
+            if not self.do_checkauth():
+                return
         p = urllib.parse.urlparse(self.path)
         q = urllib.parse.parse_qs(p.query)
         search = q.get("search", [""])[0]
@@ -845,8 +885,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         if not os.path.isdir("."+path):
             return self.download("."+path, inline=True)
         title = f"{self.server.title} - {html.escape(path, quote=False)}"
-        htmldoc = HTML
-        htmldoc += f"  <title>{title}</title>\n</head>\n"
+        htmldoc = HTML.format(title=title, charset=ENC)
         htmldoc += '<body onload="setmask()">\n'
 
         href = '<a href="/" class="home" title="Home">&nbsp;</a>'
@@ -872,7 +911,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
 
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-type", "text/html")
-        super().end_headers()
+        self.end_headers()
 
         self.write_html(htmldoc)
 
@@ -891,10 +930,46 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
 
     def devnull(self):
         self.send_error(HTTPStatus.BAD_REQUEST, "Unsupported method")
-        super().end_headers()
+        self.end_headers()
         return
     
-    do_POST   = devnull
+    def do_POST(self):
+        if self.path == '/login':
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            params = urllib.parse.parse_qs(post_data.decode('utf-8'))
+            username = params.get('username', [None])[0]
+            password = params.get('password', [None])[0]
+
+            if username == self.server.userp[0] and self.server.userp[1] == password:
+                self.send_response(302)
+                self.send_header('Set-Cookie', f'session={username}')
+                self.send_header('Location', '/')
+                self.end_headers()
+            else:
+                self.send_response(302)
+                self.send_header('Location', '/login')
+                self.end_headers()
+
+    def is_authenticated(self):
+        auth_header = self.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Basic '):
+            encoded_credentials = auth_header.split(' ')[1]
+            decoded_credentials = base64.b64decode(encoded_credentials).decode('utf-8')
+            username, password = decoded_credentials.split(':')
+
+            if username == self.server.userp[0] and self.server.userp[1] == password:
+                return True
+
+        cookie_header = self.headers.get('Cookie')
+        if cookie_header:
+            cookie = SimpleCookie(cookie_header)
+            session = cookie.get('session')
+            if session and session.value == self.server.userp[0]:
+                return True
+
+        return False
+
     do_PUT    = devnull
     do_DELETE = devnull
 
@@ -907,6 +982,7 @@ class HTTPFileServer(ThreadingHTTPServer):
         """add title property"""
         self.title = title
         self._auth = None
+        self.userp = userp
         if userp[0]:
             self._auth = base64.b64encode(f"{userp[0]}:{userp[1]}".encode()).decode()
 
