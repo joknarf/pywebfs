@@ -171,9 +171,11 @@ CSS = f"""
         font-size: 15px;
         outline: none;
         text-indent: 10px;
+        background-color: white;
     }}
     #search {{
-        background: url('data:image/svg+xml;utf8,{SEARCH_CSS}') no-repeat;
+        background-image: url('data:image/svg+xml;utf8,{SEARCH_CSS}');
+        background-repeat:  no-repeat;
         background-size: 18px 18px;
         background-position-y: center;
         background-position-x: 3px;
