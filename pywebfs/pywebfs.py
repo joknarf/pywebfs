@@ -9,6 +9,8 @@ import argparse
 import urllib
 import html
 import base64
+from functools import lru_cache
+
 # python 3.6 no TheedingHTTPServer
 try: 
     from http.server import (
@@ -24,7 +26,6 @@ from http.cookies import SimpleCookie
 from http import HTTPStatus
 import ssl
 import urllib.parse
-from time import sleep
 from datetime import datetime, timedelta, timezone
 from fnmatch import fnmatchcase
 import ipaddress
@@ -438,7 +439,7 @@ def convert_mode(st_mode):
         permissions += ('rwxrwxrwx'[i] if (st_mode & (0o400 >> i)) else '-')
     return permissions
 
-
+@lru_cache(maxsize=128)
 def get_username(uid):
     """get username from uid"""
     if NO_PERM:
@@ -448,6 +449,7 @@ def get_username(uid):
     except KeyError:
         return None
 
+@lru_cache(maxsize=128)
 def get_groupname(gid):
     """get groupname from gid"""
     if NO_PERM:
@@ -480,10 +482,10 @@ def grep(rex, path, first=False):
     if is_binary_file(path) != False:
         return []
     founds = []
-    with open(path, "r") as fd:
+    with open(path, "r", buffering=8192) as fd:
         try:
             for line in fd:
-                line = line.rstrip("\r\n").rstrip("\n")
+                line = line.rstrip("\r\n")
                 found = rex.search(line)
                 if found:
                     newline = ""
