@@ -315,7 +315,7 @@ HTML = """
   <title>{title}</title>
 </head>
 """
-#<link rel="stylesheet" href="/style.css">
+# <link rel="stylesheet" href="/style.css">
 # <style>
 # {CSS}
 # </style>
@@ -335,6 +335,7 @@ LOGIN = """
 </div>
 </body>
 """
+
 JAVASCRIPT = """
 <script>
     function setmask() {
@@ -617,6 +618,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
     def send_data(self, data):
         """build response"""
         self.send_response(HTTPStatus.OK)
+        self.send_header("Content-type", self.guess_type(self.path))
         self.send_header("Cache-Control", "max-age=3600")
         self.end_headers()
         self.write_html(data)
