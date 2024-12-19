@@ -117,12 +117,10 @@ CSS = f"""
     #files tr td:nth-child(3), #files tr th:nth-child(3) {{
         padding-right: 0px;
         text-align: right;
-        font-size: 0.9em;
     }}
     /* unit */
     #files tr td:nth-child(4), #files tr th:nth-child(4) {{
         padding-left: 5px;
-        font-size: 0.9em;
     }}
     /* download */
     #files tr td:last-child a {{
