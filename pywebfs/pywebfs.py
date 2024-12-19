@@ -122,6 +122,7 @@ CSS = f"""
         display: inline-block;
         text-indent: 20px;
         background-size: 16px 16px;
+        cursor: pointer;
     }}    
     #files tr td {{
         font-variant-numeric: tabular-nums;    
@@ -205,7 +206,7 @@ CSS = f"""
         border: 0px;
         background-size: 18px 18px;
         background-position-y: center;
-        cursor:pointer;
+        cursor: pointer;
         width: 25px;
     }}
     .path {{
