@@ -112,10 +112,17 @@ CSS = f"""
         padding-right: 0px;
         text-align: right;
     }}
+    /* unit */
     #files tr td:nth-child(4), #files tr th:nth-child(4) {{
         padding-left: 5px;
     }}
-    
+    /* download */
+    #files tr td:last-child a {{
+        background: url('data:image/svg+xml;utf8,{DOWNLOAD_CSS}') no-repeat;
+        display: inline-block;
+        text-indent: 20px;
+        background-size: 16px 16px;
+    }}    
     #files tr td {{
         font-variant-numeric: tabular-nums;    
     }}
@@ -231,14 +238,11 @@ CSS = f"""
         background: url('data:image/svg+xml;utf8,{UPFOLDER_CSS}') no-repeat;
         width: 100px;
     }}
-    .download {{
-        background: url('data:image/svg+xml;utf8,{DOWNLOAD_CSS}') no-repeat;
-    }}
     .sort {{
         background: url('data:image/svg+xml;utf8,{SORT_CSS}') no-repeat;
         text-indent: 15px !important;
     }}
-    .folder, .file, .link, .upfolder, .download, .sort {{
+    .folder, .file, .link, .upfolder, .sort {{
         display: inline-block;
         text-indent: 20px;
         background-size: 16px 16px;
@@ -291,7 +295,7 @@ CSS = f"""
         body {{
             -webkit-text-size-adjust: 180%;
         }}
-        .search, .searchtxt, .home, .folder, .file, .link, .upfolder, .download {{
+        .search, .searchtxt, .home, .folder, .file, .link, .upfolder, #files tr td:last-child a {{
             background-size: 32px 32px;
             text-indent: 40px;
         }}
@@ -372,6 +376,9 @@ JAVASCRIPT = """
         }
     });
 
+    function dl(hr) {
+        document.location.href = hr.parentNode.parentNode.cells[0].firstChild.href + "?download=1";
+    }
 </script>
 """
 
@@ -605,6 +612,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         self.send_response(status_code)
         encoded = data.encode(ENC, "surrogateescape")
         self.send_header("Content-Length", str(len(encoded)))
+        self.send_header("Cache-Control", "max-age=3600")
         self.end_headers()
         try: 
             self.wfile.write(encoded)
@@ -626,12 +634,9 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         if mimetype in ["text/plain"]:
             self.send_header("Content-Disposition", "inline")
         self.send_header("Content-Type", mimetype)
-        if self.path in ["/style.css", "/favicon.ico"]:
-            self.send_header("Cache-Control", "max-age=3600")
-        else:
-            self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
-            self.send_header("Pragma", "no-cache")
-            self.send_header("Expires", "0")
+        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
 
 #    def end_headers(self):
 #        self.mime_header()
@@ -681,7 +686,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             '<td>%s</td>' % get_groupname(stat.st_gid),
             '<td>%s</td>' % convert_mode(stat.st_mode),
             '<td>%s</td>' % datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
-            '<td>%s</td>' % f'<a href="{linkname}?download=1" class="download">&nbsp;</a>',
+            '<td>%s</td>' % f'<a onclick=dl(this)>&nbsp;</a>',
         ]
         if NO_PERM:
             fields = fields[:4] + fields[7:]
