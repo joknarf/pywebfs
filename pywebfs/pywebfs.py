@@ -401,6 +401,7 @@ def accent_re(rexp):
     )
 
 def fs_path(path):
+    """ unquote path and convert to filesystem encoding """
     try:
         return urllib.parse.unquote(path, errors="surrogatepass")
     except UnicodeDecodeError:
@@ -408,6 +409,7 @@ def fs_path(path):
 
 
 def convert_size(size_bytes):
+    """ convert size in bytes to human readable """
     if size_bytes == 0:
         return ("0","B")
 
@@ -422,6 +424,7 @@ def convert_size(size_bytes):
 
 
 def convert_mode(st_mode):
+    """ convert mode to rwxrwxrwx """
     permissions = ''
     for i in range(9):
         permissions += ('rwxrwxrwx'[i] if (st_mode & (0o400 >> i)) else '-')
@@ -429,6 +432,7 @@ def convert_mode(st_mode):
 
 
 def get_username(uid):
+    """get username from uid"""
     if NO_PERM:
         return None
     try:
@@ -437,6 +441,7 @@ def get_username(uid):
         return None
 
 def get_groupname(gid):
+    """get groupname from gid"""
     if NO_PERM:
         return None
     try:
@@ -563,21 +568,22 @@ def hidden(name):
 
 def file_head():
     fields = [
-            '<th class="name"><div class="name sort">Name</div><div class="info" id="nameinfo">loading</div></th>',
-            '<th><span class="sort">Ext</span></th>',
-            '<th class="size"><span class="sort">Size</span></th>',
-            '<th></th>',
-            '<th>Owner</th>',
-            '<th>Group</th>',
-            '<th>Perm</th>',
-            '<th><span class="sort">Modified</span></th>',
-            '<th style=width:100%></th>',
+        '<th class="name"><div class="name sort">Name</div><div class="info" id="nameinfo">loading</div></th>',
+        '<th><span class="sort">Ext</span></th>',
+        '<th class="size"><span class="sort">Size</span></th>',
+        '<th></th>',
+        '<th>Owner</th>',
+        '<th>Group</th>',
+        '<th>Perm</th>',
+        '<th><span class="sort">Modified</span></th>',
+        '<th style=width:100%></th>',
     ]
     if NO_PERM:
         fields = fields[:4] + fields[7:]
     return "<tr>\n  " + "\n  ".join(fields) + "\n</tr>\n"
 
 def file_folderup(path):
+    """build folder up row"""
     if path == "./":
         return ""
     parentdir = os.path.dirname(path[1:].rstrip("/")).rstrip("/") + "/"
@@ -598,6 +604,7 @@ def file_folderup(path):
     return "<tr>\n  " + "  \n".join(fields) + "</tr>"
 
 def os_scandir(path):
+    """scan directory"""
     try:
         return os.scandir(path)
     except:
@@ -606,26 +613,22 @@ def os_scandir(path):
 class HTTPFileHandler(SimpleHTTPRequestHandler):
     """Class handler for HTTP"""
 
-    def _set_response(self, status_code, data):
+    def send_data(self, data):
         """build response"""
-
-        self.send_response(status_code)
-        encoded = data.encode(ENC, "surrogateescape")
-        self.send_header("Content-Length", str(len(encoded)))
+        self.send_response(HTTPStatus.OK)
         self.send_header("Cache-Control", "max-age=3600")
         self.end_headers()
-        try: 
-            self.wfile.write(encoded)
-        except:
-            pass
+        self.write_html(data)
 
     def finish(self):
+        """finish connection"""
         try:
             return super().finish()
         except ConnectionResetError:
             pass
 
     def mime_header(self):
+        """build header guessing mimetype"""
         mimetype = self.guess_type(self.path)
         fpath = self.translate_path(self.path)
         if mimetype == "application/octet-stream" and is_binary_file(fpath) == False:
@@ -638,11 +641,8 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         self.send_header("Pragma", "no-cache")
         self.send_header("Expires", "0")
 
-#    def end_headers(self):
-#        self.mime_header()
-#        super().end_headers()
-
     def file_tr(self, entry, link=None):
+        """build file row"""
         if hidden(entry.name):
             return False, 0
         displayname = linkname = entry.name
@@ -694,6 +694,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         return file, size
 
     def find_walk(self, path, rexp, lenpath, infos):
+        """find files recursively"""
         for entry in os_scandir(path):
             if hidden(entry.name):
                 continue
@@ -705,7 +706,6 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 infos[1] += size
         return infos
             
-
     def find_files(self, search, path):
         """ find files recursively with name contains any word in search"""
         rexp = []
@@ -722,6 +722,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         self.write_html(f'<p id="info">{nbfiles} file{s} - {" ".join(convert_size(size))}</p>')
 
     def search_walk(self, path, rex, lenpath, infos):
+        """search recursively in files"""
         for entry in os_scandir(path):
             if hidden(entry.name):
                 continue
@@ -750,10 +751,8 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                     )
         return infos
 
-
     def search_files(self, search, path):
         """ find files recursively containing search pattern"""
-        
         try:
             rex = re.compile(accent_re(search), re.IGNORECASE)
         except:
@@ -765,6 +764,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         self.write_html(f'<p id="info">{nbfiles} file{s} - {" ".join(convert_size(size))}</p>')
     
     def write_html(self, data):
+        """write html data"""
         encoded = data.encode(ENC, "surrogateescape")
         try: 
             self.wfile.write(encoded)
@@ -772,13 +772,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             pass
 
     def list_directory(self, path):
-        """Helper to produce a directory listing (absent index.html).
-
-        Return value is either a file object, or None (indicating an
-        error).  In either case, the headers are sent, making the
-        interface the same as for send_head().
-
-        """
+        """scandir directory and write html"""
         self.write_html('<table id="files">\n')
         self.write_html(file_head())
         self.write_html(file_folderup(path))
@@ -801,6 +795,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         self.write_html(f'<p id="info">{nbfiles} file{s} - {" ".join(convert_size(size))}</p>\n')
 
     def download(self, path, inline=False):
+        """download file"""
         if os.path.isdir(path):
             tmpdir = os.path.expanduser("~/.pywebfs")
             basedir = os.path.basename(path.rstrip("/"))
@@ -831,6 +826,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             self.send_error(HTTPStatus.NOT_FOUND, "File not found")
 
     def do_checkauth(self):
+        """check authentication"""
         if self.path != '/login':
             if self.is_authenticated():
                 return True
@@ -871,9 +867,9 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         if self.path == "/favicon.ico":
             self.path = "/favicon.svg"
         if self.path == "/favicon.svg":
-            return self._set_response(HTTPStatus.OK, FOLDER)
+            return self.send_data(FOLDER)
         elif self.path == "/style.css":
-            return self._set_response(HTTPStatus.OK, CSS)
+            return self.send_data(CSS)
         if self.server.userp[0]:
             if not self.do_checkauth():
                 return
@@ -938,11 +934,13 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         self.write_html('</body>\n</html>\n')
 
     def devnull(self):
+        """unsupported method"""
         self.send_error(HTTPStatus.BAD_REQUEST, "Unsupported method")
         self.end_headers()
         return
     
     def do_POST(self):
+        """get login post data"""
         if self.path == '/login':
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
@@ -961,6 +959,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 self.end_headers()
 
     def is_authenticated(self):
+        """check if user is authenticated"""
         auth_header = self.headers.get('Authorization')
         if auth_header and auth_header.startswith('Basic '):
             encoded_credentials = auth_header.split(' ')[1]
@@ -981,7 +980,6 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
 
     do_PUT    = devnull
     do_DELETE = devnull
-
 
 
 class HTTPFileServer(ThreadingHTTPServer):
@@ -1009,9 +1007,11 @@ class HTTPFileServer(ThreadingHTTPServer):
 
 
 def log_message(*args):
+    """log message"""
     print(datetime.now().strftime("- - - [%d/%b/%Y %H:%M:%S]"), *args, file=sys.stderr)
 
 def daemon_d(action, pidfilepath, hostname=None, args=None):
+    """start/stop daemon"""
     import signal
     import daemon, daemon.pidfile
 
@@ -1052,6 +1052,7 @@ def daemon_d(action, pidfilepath, hostname=None, args=None):
 
 
 def init_server(hostname, args):
+    """initialize http server"""
     prefix = "https" if args.cert else "http"
     log_message(f"Starting {prefix} server listening on {args.listen} port {args.port}")
     log_message(f"{prefix} server : {prefix}://{hostname}:{args.port}")
@@ -1133,8 +1134,6 @@ def main():
     if args.action == "restart":
         daemon_d("stop", pidfile)
         args.action = "start"
-#    if not args.action or args.action == "start":
-#        server = init_server(hostname, args)
     if args.action:
         sys.exit(not daemon_d(args.action, pidfile, hostname, args))
     else:
@@ -1143,6 +1142,7 @@ def main():
             server.serve_forever()
         except KeyboardInterrupt:
             log_message("Stopping server")
+            server.socket.close()
             sys.exit(0)
 
 
