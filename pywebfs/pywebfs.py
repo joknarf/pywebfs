@@ -498,7 +498,7 @@ def grep(rex, path, first=False):
                     founds.append(newline)
                     if first:
                         return founds
-        except:
+        except Exception as e:
             pass
     return founds
 
