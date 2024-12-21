@@ -195,8 +195,8 @@ CSS = f"""
         background-repeat:  no-repeat;
         background-size: 23px 23px;
         background-position-y: center;
-        background-position-x: 3px;
-        text-indent: 20px;
+        background-position-x: right;
+        text-indent: 7px;
     }}
     .search {{
         background: url('data:image/svg+xml;utf8,{SEARCH_PLUS_CSS}') no-repeat;
