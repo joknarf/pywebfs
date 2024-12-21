@@ -20,10 +20,10 @@ $ pywebfs
 ```
 
 * Browse/Download/Search files using browser `http://<yourserver>:8080`
-![image](https://github.com/user-attachments/assets/d77ff596-1e31-4e3f-ac52-042106f9e838)
+![image](https://github.com/user-attachments/assets/4246831f-27dd-4b3c-8476-48a6ae444860)
 
-* search text in files (grep)
-![image](https://github.com/user-attachments/assets/f0cf4dda-2724-4137-967f-561cd12e60d5)
+* search text in files (like grep -r)
+![image](https://github.com/user-attachments/assets/4e780d0a-c3fd-430b-9682-b87c4cba3233)
 
 ## features
 
