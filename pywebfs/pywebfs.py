@@ -64,12 +64,11 @@ SEARCH_TXT_CSS = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" fi
 DOWNLOAD_CSS = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M12.5535 16.5061C12.4114 16.6615 12.2106 16.75 12 16.75C11.7894 16.75 11.5886 16.6615 11.4465 16.5061L7.44648 12.1311C7.16698 11.8254 7.18822 11.351 7.49392 11.0715C7.79963 10.792 8.27402 10.8132 8.55352 11.1189L11.25 14.0682V3C11.25 2.58579 11.5858 2.25 12 2.25C12.4142 2.25 12.75 2.58579 12.75 3V14.0682L15.4465 11.1189C15.726 10.8132 16.2004 10.792 16.5061 11.0715C16.8118 11.351 16.833 11.8254 16.5535 12.1311L12.5535 16.5061Z" fill="%231C274C"></path><path d="M3.75 15C3.75 14.5858 3.41422 14.25 3 14.25C2.58579 14.25 2.25 14.5858 2.25 15V15.0549C2.24998 16.4225 2.24996 17.5248 2.36652 18.3918C2.48754 19.2919 2.74643 20.0497 3.34835 20.6516C3.95027 21.2536 4.70814 21.5125 5.60825 21.6335C6.47522 21.75 7.57754 21.75 8.94513 21.75H15.0549C16.4225 21.75 17.5248 21.75 18.3918 21.6335C19.2919 21.5125 20.0497 21.2536 20.6517 20.6516C21.2536 20.0497 21.5125 19.2919 21.6335 18.3918C21.75 17.5248 21.75 16.4225 21.75 15.0549V15C21.75 14.5858 21.4142 14.25 21 14.25C20.5858 14.25 20.25 14.5858 20.25 15C20.25 16.4354 20.2484 17.4365 20.1469 18.1919C20.0482 18.9257 19.8678 19.3142 19.591 19.591C19.3142 19.8678 18.9257 20.0482 18.1919 20.1469C17.4365 20.2484 16.4354 20.25 15 20.25H9C7.56459 20.25 6.56347 20.2484 5.80812 20.1469C5.07435 20.0482 4.68577 19.8678 4.40901 19.591C4.13225 19.3142 3.9518 18.9257 3.85315 18.1919C3.75159 17.4365 3.75 16.4354 3.75 15Z" fill="%231C274C"></path></g></svg>'
 SORT_CSS = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M16 18L16 6M16 6L20 10.125M16 6L12 10.125" stroke="%231C274C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 6L8 18M8 18L12 13.875M8 18L4 13.875" stroke="%231C274C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>'
 CSS = f"""
-    html, body: {{
-        margin:0px;
-        border:0px;
+    html, body {{
+        padding-top: 0px;
+        margin-top: 0px;
     }}
     body {{
-        padding: 0px;
         background-color: #333;
         font-family: -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;;
         font-size: 1em;
@@ -83,33 +82,78 @@ CSS = f"""
         margin: 0;
         line-height: 105%
     }}
+    table  {{
+        /*width: 100%;*/
+        border-spacing: 0px;
+        border-radius: 10px;
+        background-color: #eee;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.50);
+        border-spacing: 0;
+        margin: 1px 10px;
+    }}
+    thead {{
+        position: sticky;
+        top: 0;
+        z-index: 2;
+    }}
+
     /*
     tr:nth-of-type(even) {{
         background-color: #e7e7f3;
     }}*/
-    tr:hover {{
-        background-color: #ddf;
+    tbody tr > td {{
+        background-color: #eee;
+        z-index: 3;
+    }}
+    tbody > tr:hover > td {{
+        background-color: #ddd;
+    }}
+    tbody > tr:hover > td:first-child {{
+        border-bottom-left-radius: 15px;
+        border-top-left-radius: 15px;
+    }}
+    tbody > tr:hover > td:last-child {{
+        border-bottom-right-radius: 15px;
+        border-top-right-radius: 15px;
+    }}
+    tbody > tr:last-child > td:first-child {{
+        border-bottom-left-radius: 15px;
+    }}
+    tbody > tr:last-child > td:last-child {{
+        border-bottom-right-radius: 15px;
+    }}
+    thead > tr > td {{
+        background-color:#eee;
     }}
     td, th {{
-        vertical-align: top;
-        padding: 5px 5px 2px 10px;
+        /*vertical-align: top;*/
         white-space: nowrap;
         line-height: 120%;
+        padding-right: 10px;
     }}
     th {{
+        padding: 5px 5px 2px 0px;
         text-align: left;
         font-weight: unset;
         color: #5c5c5c;
         cursor: pointer;
+        background-color: #333;
     }}
     th.size {{
         text-align: right;
     }}
     #files tr td a {{
         color: #0366d6;
+        padding: 3px 0px 3px 10px;
+        width: 100%;
+    }}
+    #files tr td a:focus {{
+        outline: none;
+        background-color: #ddf;
     }}
     #files tr td:first-child {{
         font-size: 1em;
+        padding-right: 15px;
     }}
     #files tr td {{
         font-size: 0.9em;
@@ -134,10 +178,11 @@ CSS = f"""
     #files tr td {{
         font-variant-numeric: tabular-nums;    
     }}
-    
-    .header {{
+    th.header {{
+        padding: 0;
+    }}
+    div.header {{
         background-color: #aaa;
-        z-index: 2;
         border-radius: 10px 10px 0px 0px;
         padding: 10px 20px 10px 10px;
         display: flex;
@@ -254,12 +299,12 @@ CSS = f"""
         display: inline-block;
         text-indent: 20px;
         background-size: 16px 16px;
-        /*background-position-y: 4px;*/
     }}
-    table {{
-        border-spacing: 0;
-        margin: 1px 10px;
+    .folder, .file, .link, .upfolder {{
+        background-position-x: 8px;
+        background-position-y: 50%;
     }}
+
     .found {{
         background: #bfc;
     }}
@@ -267,8 +312,12 @@ CSS = f"""
         visibility: hidden;
         position: absolute;
     }}
+    tr.titles th {{
+        background-color: #d5d5d5;
+    }}
     th.name {{
         min-width: 100px;
+        padding-left: 10px;
     }}
     #files th.name {{
         min-width: 200px;
@@ -316,9 +365,9 @@ HTML = """
 <!DOCTYPE HTML>
 <html lang="en">
 <head>
+  <meta charset="{charset}">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/style.css">
-  <meta charset="{charset}">
   <title>{title}</title>
 </head>
 """
@@ -344,13 +393,13 @@ LOGIN = """
 """
 
 JAVASCRIPT = """
-<script>
-    function setmask() {
-        document.getElementById("mask").style.width=document.getElementById("list").offsetWidth + 1 + "px";
+    function updateinfo() {
+        document.getElementById("nameinfo").innerHTML=document.getElementById("info").innerHTML;
     }
-    window.onresize = setmask;
-    document.getElementById("nameinfo").innerHTML=document.getElementById("info").innerHTML;
-
+    function pywonload() {
+        updateinfo();
+    }
+    window.onload = pywonload;
     const getCellValue = (tr, idx) => tr.children[idx].title || tr.children[idx].innerText || tr.children[idx].textContent;
 
     const comparer = (idx, asc) => (a, b) => ((v1, v2) => 
@@ -358,25 +407,24 @@ JAVASCRIPT = """
         )(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx));
 
     // do the work...
-    document.querySelectorAll('th').forEach(th => th.addEventListener('click', (() => {
+    document.querySelectorAll('tr.titles th').forEach(th => th.addEventListener('click', (() => {
         const table = th.closest('table');
-        uprow = table.rows[1]
-        Array.from(table.querySelectorAll('tr:nth-child(n+2)'))
+        uprow = table.rows[3]
+        const tbody = table.querySelector('tbody');
+        Array.from(table.querySelectorAll('tbody tr:nth-child(n+1)'))
             .sort(comparer(Array.from(th.parentNode.children).indexOf(th), this.asc = !this.asc))
-            .forEach(tr => table.appendChild(tr) );
+            .forEach(tr => tbody.appendChild(tr) );
         if (uprow.cells[0].textContent=='..')
-            table.insertBefore(uprow, table.rows[1]);
+            tbody.insertBefore(uprow, table.rows[3]);
     })));
 
-    
     document.getElementById("search").addEventListener("keyup", function() {
         var input = document.getElementById("search").value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        var table = document.getElementById("list");
-        var rows = table.getElementsByTagName("tr");
-
-        for (var i = 1; i < rows.length; i++) {
+        var table = document.getElementById("files");
+        if (!table) return;
+        var rows = table.querySelector("tbody").getElementsByTagName("tr");
+        for (var i = 0; i < rows.length; i++) {
             var cells = rows[i].getElementsByTagName("td");
-
             if (cells[0].innerText.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(input)) {
                 rows[i].style.display = "";
             } else {
@@ -385,12 +433,54 @@ JAVASCRIPT = """
         }
     });
 
+    document.addEventListener('keydown', function(event) {
+        const focusedElement = document.activeElement;
+        const table = focusedElement.closest('table');
+        rowIndex = focusedElement.closest('tr').rowIndex;
+        if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            for (i = rowIndex - 1; i > 1; i--) {
+                if (table.rows[i].style.display !== 'none') {             
+                    table.rows[i].querySelector('a').focus();
+                    return;
+                }
+            }
+            document.getElementById("search").focus();
+            return;
+        }
+        if (event.key === 'ArrowDown') {
+            if(rowIndex == 0) rowIndex = 1;
+            event.preventDefault();
+            for(i = rowIndex + 1; i < table.rows.length; i++) {
+                if (table.rows[i].style.display !== 'none') {
+                    table.rows[i].querySelector('a').focus();
+                    return;
+                }
+            }
+            return;
+        }
+        if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            if (focusedElement.tagName === 'A') {
+                focusedElement.click();
+            }
+            return;
+        }
+        if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            if (focusedElement.tagName === 'A') {
+                window.history.back();
+            }
+            return;
+        }
+        document.getElementById("search").focus();
+    });
+
     function dl(hr) {
         document.location.href = hr.parentNode.parentNode.cells[0].firstChild.href + "?download=1";
     }
-</script>
 """
-
+#JAVASCRIPT=f"<script>\n{JAVASCRIPT}\n</script>"
 RE_AGENT = re.compile(r"(Edg|Chrome|Safari|Firefox|Opera|Lynx)[^ ]*")
 
 class BadStat:
@@ -590,7 +680,7 @@ def file_head():
     ]
     if NO_PERM:
         fields = fields[:4] + fields[7:]
-    return "<tr>\n  " + "\n  ".join(fields) + "\n</tr>\n"
+    return '<tr class="titles">\n  ' + "\n  ".join(fields) + "\n</tr>\n"
 
 def file_folderup(path):
     """build folder up row"""
@@ -725,10 +815,12 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 rexp.append(re.compile(accent_re(s), re.IGNORECASE))
             except:
                 rexp.append(re.compile(accent_re(re.escape(s))))
-        self.write_html('<table id="files">\n')
+        self.write_html('<table id="files">\n<thead>\n')
+        self.write_html(self.header)
         self.write_html(file_head())
+        self.write_html('</thead>\n<tbody>\n')
         nbfiles, size = self.find_walk(path, rexp, len(path), [0,0])
-        self.write_html("</table>")
+        self.write_html("</tbody>\n</table>\n")
         s = "s" if nbfiles>1 else ""            
         self.write_html(f'<p id="info">{nbfiles} file{s} - {" ".join(convert_size(size))}</p>')
 
@@ -768,9 +860,13 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             rex = re.compile(accent_re(search), re.IGNORECASE)
         except:
             rex = re.compile(accent_re(re.escape(search)), re.IGNORECASE)
-        self.write_html('<table class="searchresult">\n<th class="name"><div class="name">Name</div><div class="info" id="nameinfo">loading</div></th><th>Text</th><th style=width:100%></th></tr>')
+        self.write_html('<table class="searchresult">')
+        self.write_html('<thead>\n')
+        self.write_html(self.header)
+        self.write_html('<tr class="titles"><th class="name"><div class="name">Name</div><div class="info" id="nameinfo">loading</div></th><th>Text</th><th style=width:100%></th></tr>')
+        self.write_html('</thead>\n<tbody>\n')
         nbfiles, size = self.search_walk(path, rex, len(path), [0,0])
-        self.write_html('</table>')
+        self.write_html('</tbody>\n</table>')
         s = "s" if nbfiles>1 else ""
         self.write_html(f'<p id="info">{nbfiles} file{s} - {" ".join(convert_size(size))}</p>')
     
@@ -784,14 +880,16 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
 
     def list_directory(self, path):
         """scandir directory and write html"""
-        self.write_html('<table id="files">\n')
+        self.write_html('<table id="files">\n<thead>\n')
+        self.write_html(self.header)
         self.write_html(file_head())
+        self.write_html(f'</thead>\n<tbody>\n')
         self.write_html(file_folderup(path))
         try:
             entries = os_scandir(path)
         except OSError:
             self.write_html("<tr><td>No permission to list directory</td></tr>")
-            self.write_html("</table>\n")
+            self.write_html("</tbody></table>\n")
             self.write_html('<p id="info">0 file - 0 B</p>\n')
             return
         entries = sorted(entries, key=lambda entry: (not entry.is_dir(), entry.name.lower()))
@@ -801,7 +899,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             file, fsize = self.file_tr(entry)
             size += fsize
             nbfiles += file
-        self.write_html("</table>\n")
+        self.write_html("</tbody>\n</table>\n")
         s = "s" if nbfiles>1 else ""
         self.write_html(f'<p id="info">{nbfiles} file{s} - {" ".join(convert_size(size))}</p>\n')
 
@@ -881,6 +979,8 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             return self.send_data(FOLDER)
         elif self.path == "/style.css":
             return self.send_data(CSS)
+        elif self.path == "/pywebfs.js":
+            return self.send_data(JAVASCRIPT)
         if self.server.userp[0]:
             if not self.do_checkauth():
                 return
@@ -902,7 +1002,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             return self.download("."+path, inline=True)
         title = f"{self.server.title} - {html.escape(path, quote=False)}"
         htmldoc = HTML.format(title=title, charset=ENC)
-        htmldoc += '<body onload="setmask()">\n'
+        htmldoc += '<body>\n'
 
         href = '<a href="/" class="home" title="Home">&nbsp;</a>'
         fpath = "/"
@@ -912,18 +1012,25 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 urllib.parse.quote(fpath, errors="surrogatepass"),
                 html.escape(dir, quote=False),
             )
-        htmldoc += '<div id="mask">\n'
-        htmldoc += '<div class="header">\n'
-        htmldoc += '<form name="search">\n'
-        htmldoc += f'  <input type="text" name="search" id="search" autofocus tabindex="1" autocomplete="off">\n'
-        htmldoc += '  <button type="submit" class="search" title="Search filenames in folder and subfolders"></button>\n'
+        #htmldoc += '<div id="mask">\n'
+        header = [
+            '<tr>\n<th colspan="100" class="header">',
+            '  <div class="header">\n'
+            '    <form name="search">\n'
+            '      <input type="text" name="search" id="search" autofocus tabindex="1" autocomplete="off">\n'
+            '      <button type="submit" class="search" title="Search filenames in folder and subfolders"></button>\n'
+        ]
         if not NO_SEARCH_TXT:
-            htmldoc += '  <button type="submit" name="searchtxt" value=1 class="searchtxt" title="Search in text files"></button>\n'
-        htmldoc += f'  {href}\n'
-        htmldoc += '</form>\n</div>\n</div>\n'
-        htmldoc += '<div id="list">\n'
-
-        enddoc = "</div>\n"
+            header.append(
+                '      <button type="submit" name="searchtxt" value=1 class="searchtxt" title="Search in text files"></button>\n'
+            )
+        header += [
+            f'    {href}'
+            '    </form>',
+            '  </div>',
+            '</th>\n</tr>\n',
+        ]
+        self.header = "\n".join(header)
 
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-type", "text/html")
@@ -940,8 +1047,9 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 self.list_directory("." + path)
         else:
             self.list_directory("." + path)
-        self.write_html(enddoc)
-        self.write_html(JAVASCRIPT)
+        #self.write_html(enddoc)
+        #self.write_html(JAVASCRIPT)
+        self.write_html('<script type="text/javascript" src="/pywebfs.js"></script>\n')
         self.write_html('</body>\n</html>\n')
 
     def devnull(self):
