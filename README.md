@@ -23,7 +23,7 @@ $ pywebfs
 ![image](https://github.com/user-attachments/assets/32f27193-e23f-4aff-b78b-fc58d378f5dd)
 
 * search text in files (like grep -r)
-![image](https://github.com/user-attachments/assets/d9313853-39f2-4bee-9c6b-b7e56c83ecd6)
+![image](https://github.com/user-attachments/assets/89bf3f6b-6d7e-4f9c-9b08-20525ba2c670)
 
 ## features
 
