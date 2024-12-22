@@ -137,7 +137,7 @@ CSS = f"""
     th.size {{
         text-align: right;
     }}
-    #files tr td:first-child a {{
+    tr td:first-child a {{
         color: #0366d6;
         padding: 3px 0px 3px 10px;
         width: 100%;
@@ -317,6 +317,9 @@ CSS = f"""
     #files th.name {{
         min-width: 200px;
     }}
+    table.searchresult tr td {{
+        vertical-align: top;
+    }}  
     div.name {{
         float: left;
     }}
