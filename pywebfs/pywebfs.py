@@ -444,6 +444,7 @@ JAVASCRIPT = """
 
     // keyboard navigation
     document.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') return;
         const focusedElement = document.activeElement;
         if (document.activeElement.tagName === 'BODY') {
             document.getElementById("search").focus();
@@ -473,23 +474,19 @@ JAVASCRIPT = """
             }
             return;
         }
-        if (event.key === 'ArrowRight') {
-            event.preventDefault();
-            if (focusedElement.tagName === 'A') {
+        if (focusedElement.tagName === 'A') {
+            if (event.key === 'ArrowRight') {
+                event.preventDefault();
                 focusedElement.click();
+                return;
             }
-            return;
-        }
-        if (event.key === 'ArrowLeft') {
-            event.preventDefault();
-            if (focusedElement.tagName === 'A') {
+            if (event.key === 'ArrowLeft') {
+                event.preventDefault();
                 window.history.back();
+                return;
             }
-            return;
         }
-        if (event.key != 'Enter') {
-            document.getElementById("search").focus();
-        }
+        document.getElementById("search").focus();
     });
 
     function dl(hr) {
