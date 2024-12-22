@@ -420,10 +420,10 @@ JAVASCRIPT = """
         var input = document.getElementById("search").value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         var table = document.getElementById("files");
         if (!table) return;
-        var rows = table.querySelector("tbody").getElementsByTagName("tr");
-        for (var i = 0; i < rows.length; i++) {
-            var cells = rows[i].getElementsByTagName("td");
-            if (cells[0].innerText.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(input)) {
+        rows = table.rows;
+        for (var i = 2; i < rows.length; i++) {
+            var cell = rows[i].children[0];
+            if (cell.innerText.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(input)) {
                 rows[i].style.display = "";
             } else {
                 rows[i].style.display = "none";
