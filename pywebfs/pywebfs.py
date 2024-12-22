@@ -391,37 +391,47 @@ LOGIN = """
 """
 
 JAVASCRIPT = """
+    // update nb files/total size
     function updateinfo() {
         document.getElementById("nameinfo").innerHTML=document.getElementById("info").innerHTML;
     }
+    // update info on load
     function pywonload() {
         updateinfo();
     }
     window.onload = pywonload;
-    const getCellValue = (tr, idx) => tr.children[idx].title || tr.children[idx].innerText || tr.children[idx].textContent;
 
+    // compare function for sorting
+    const getCellValue = (tr, idx) => tr.children[idx].title || tr.children[idx].innerText || tr.children[idx].textContent;
     const comparer = (idx, asc) => (a, b) => ((v1, v2) => 
         v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2)
         )(getCellValue(asc ? a : b, idx), getCellValue(asc ? b : a, idx));
 
-    // do the work...
+    // sort table by clicking on the header
     document.querySelectorAll('tr.titles th').forEach(th => th.addEventListener('click', (() => {
         const table = th.closest('table');
-        uprow = table.rows[3]
+        uprow = table.rows[2]
         const tbody = table.querySelector('tbody');
+        table.style.display = 'none';
         Array.from(table.querySelectorAll('tbody tr:nth-child(n+1)'))
             .sort(comparer(Array.from(th.parentNode.children).indexOf(th), this.asc = !this.asc))
             .forEach(tr => tbody.appendChild(tr) );
         if (uprow.cells[0].textContent=='..')
-            tbody.insertBefore(uprow, table.rows[3]);
+            tbody.insertBefore(uprow, table.rows[2]);
+        table.style.display = '';
     })));
 
+    previousFilter = '';
+    // quick filter table
     document.getElementById("search").addEventListener("keyup", function() {
         var input = document.getElementById("search").value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        if (input == previousFilter) return;
+        previousFilter = input;
         var table = document.getElementById("files");
         if (!table) return;
         rows = table.rows;
-        for (var i = 2; i < rows.length; i++) {
+        table.style.display = "none";
+        for (var i = 2; i <rows.length ; i++) {
             var cell = rows[i].children[0];
             if (cell.innerText.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(input)) {
                 rows[i].style.display = "";
@@ -429,8 +439,10 @@ JAVASCRIPT = """
                 rows[i].style.display = "none";
             }
         }
+        table.style.display = "";
     });
 
+    // keyboard navigation
     document.addEventListener('keydown', function(event) {
         const focusedElement = document.activeElement;
         if (document.activeElement.tagName === 'BODY') {
