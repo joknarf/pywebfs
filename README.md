@@ -20,16 +20,17 @@ $ pywebfs
 ```
 
 * Browse/Download/Search files using browser `http://<yourserver>:8080`
-![image](https://github.com/user-attachments/assets/4246831f-27dd-4b3c-8476-48a6ae444860)
+![image](https://github.com/user-attachments/assets/32f27193-e23f-4aff-b78b-fc58d378f5dd)
 
 * search text in files (like grep -r)
-![image](https://github.com/user-attachments/assets/4e780d0a-c3fd-430b-9682-b87c4cba3233)
+![image](https://github.com/user-attachments/assets/d9313853-39f2-4bee-9c6b-b7e56c83ecd6)
 
 ## features
 
 * Serve static files
 * Download folder as zip file
-* Filter files
+* Quick filter files
+* Keyboard navigation using arrows
 * Search files recursively multiple word any order (disable feature with --nosearch)
 * Search text in files recursively
 * Basic Auth support (single user)
