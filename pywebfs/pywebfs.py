@@ -475,7 +475,9 @@ JAVASCRIPT = """
             }
             return;
         }
-        document.getElementById("search").focus();
+        if (event.key != 'Enter') {
+            document.getElementById("search").focus();
+        }
     });
 
     function dl(hr) {
