@@ -144,7 +144,8 @@ CSS = f"""
     }}
     #files tr td a:focus {{
         outline: none;
-        background-color: #ddf;
+        background-color: #ccf;
+        border-radius: 15px;
     }}
     #files tr td:first-child {{
         font-size: 1em;
@@ -422,24 +423,32 @@ JAVASCRIPT = """
     })));
 
     previousFilter = '';
+    filesTable = document.getElementById("files");
+    if (filesTable) {
+        lastRow = filesTable.rows[filesTable.rows.length - 1];
+    }
     // quick filter table
     document.getElementById("search").addEventListener("keyup", function() {
         var input = document.getElementById("search").value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         if (input == previousFilter) return;
         previousFilter = input;
-        var table = document.getElementById("files");
-        if (!table) return;
-        rows = table.rows;
-        table.style.display = "none";
+        if (!filesTable) return;
+        rows = filesTable.rows;
+        filesTable.style.display = "none";
+        lastRow.children[0].style.borderBottomLeftRadius = "";
+        lastRow.lastElementChild.style.borderBottomRightRadius = "";
         for (var i = 2; i <rows.length ; i++) {
             var cell = rows[i].children[0];
             if (cell.innerText.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(input)) {
                 rows[i].style.display = "";
+                lastRow = rows[i];
             } else {
                 rows[i].style.display = "none";
             }
         }
-        table.style.display = "";
+        lastRow.children[0].style.borderBottomLeftRadius = "15px";
+        lastRow.lastElementChild.style.borderBottomRightRadius = "15px";
+        filesTable.style.display = "";
     });
 
     // keyboard navigation
