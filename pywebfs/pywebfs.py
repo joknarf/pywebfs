@@ -65,8 +65,8 @@ DOWNLOAD_CSS = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/20
 SORT_CSS = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M16 18L16 6M16 6L20 10.125M16 6L12 10.125" stroke="%231C274C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8 6L8 18M8 18L12 13.875M8 18L4 13.875" stroke="%231C274C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>'
 CSS = f"""
     html, body {{
-        padding-top: 0px;
-        margin-top: 0px;
+        padding: 0px;
+        margin: 0px;
     }}
     body {{
         background-color: #333;
@@ -89,7 +89,7 @@ CSS = f"""
         background-color: #eee;
         box-shadow: 0 0 20px rgba(0, 0, 0, 0.50);
         border-spacing: 0;
-        margin: 1px 10px;
+        margin: 1px 10px 5px 5px;
     }}
     thead {{
         position: sticky;
@@ -97,10 +97,6 @@ CSS = f"""
         z-index: 2;
     }}
 
-    /*
-    tr:nth-of-type(even) {{
-        background-color: #e7e7f3;
-    }}*/
     tbody tr > td {{
         background-color: #eee;
         z-index: 3;
@@ -126,7 +122,6 @@ CSS = f"""
         background-color:#eee;
     }}
     td, th {{
-        /*vertical-align: top;*/
         white-space: nowrap;
         line-height: 120%;
         padding-right: 10px;
@@ -142,7 +137,7 @@ CSS = f"""
     th.size {{
         text-align: right;
     }}
-    #files tr td a {{
+    #files tr td:first-child a {{
         color: #0366d6;
         padding: 3px 0px 3px 10px;
         width: 100%;
@@ -435,6 +430,10 @@ JAVASCRIPT = """
 
     document.addEventListener('keydown', function(event) {
         const focusedElement = document.activeElement;
+        if (document.activeElement.tagName === 'BODY') {
+            document.getElementById("search").focus();
+            return;
+        }
         const table = focusedElement.closest('table');
         rowIndex = focusedElement.closest('tr').rowIndex;
         if (event.key === 'ArrowUp') {
