@@ -452,6 +452,24 @@ JAVASCRIPT = """
         filesTable.style.display = "";
     });
 
+    function focusFile(event, table, start, increment, nb) {
+        event.preventDefault();
+        nbRows = 0;
+        for (i = start; i > 1 && i<table.rows.length; i+=increment) {
+            if (table.rows[i].style.display !== 'none') {
+                nbRows++;
+                if (nbRows == nb) {
+                    topFocus = table.rows[i].getBoundingClientRect().top;
+                    bottomHeader = table.tHead.getBoundingClientRect().bottom;
+                    if (topFocus < bottomHeader)
+                        window.scrollBy(0, topFocus-bottomHeader);
+                    table.rows[i].querySelector('a').focus();
+                    break;
+                }
+            }
+        }
+    }
+
     // keyboard navigation
     document.addEventListener('keydown', function(event) {
         if (['Enter', 'Tab'].includes(event.key)) return;
@@ -462,37 +480,6 @@ JAVASCRIPT = """
         }
         const table = focusedElement.closest('table');
         rowIndex = focusedElement.closest('tr').rowIndex;
-        if (event.key === 'ArrowUp') {
-            event.preventDefault();
-            for (i = rowIndex - 1; i > 1; i--) {
-                if (table.rows[i].style.display !== 'none') {             
-                    table.rows[i].querySelector('a').focus();
-                    return;
-                }
-            }
-            return;
-        }
-        if (event.key === 'ArrowDown') {
-            if(rowIndex == 0) rowIndex = 1;
-            event.preventDefault();
-            for(i = rowIndex + 1; i < table.rows.length; i++) {
-                if (table.rows[i].style.display !== 'none') {
-                    table.rows[i].querySelector('a').focus();
-                    return;
-                }
-            }
-            return;
-        }
-        if (event.key === 'End') {
-            event.preventDefault();
-            table.rows[table.rows.length - 1].querySelector('a').focus();
-            return;
-        }
-        if (event.key === 'Home') {
-            event.preventDefault();
-            table.rows[2].querySelector('a').focus();
-            return;
-        }
         if (focusedElement.tagName === 'A') {
             if (event.key === 'ArrowRight') {
                 event.preventDefault();
@@ -505,6 +492,15 @@ JAVASCRIPT = """
                 return;
             }
         }
+        if(rowIndex == 0) rowIndex = 1;
+        if (event.key === 'ArrowUp') return focusFile(event, table, rowIndex-1, -1, 1);
+        if (event.key === 'ArrowDown') return focusFile(event, table, rowIndex+1, 1, 1);
+        if (event.key === 'End') return focusFile(event, table, table.rows.length-1, -1, 1);
+        if (event.key === 'Home') return focusFile(event, table, 2, 1, 1);
+        //pageHeight = table.querySelector('tbody').clientHeight/table.rows[2].clientHeight;
+        pageHeight = Math.floor(window.innerHeight/table.rows[2].clientHeight-2);
+        if (event.key === 'PageUp') return focusFile(event, table, rowIndex-1, -1, pageHeight);
+        if (event.key === 'PageDown') return focusFile(event, table, rowIndex+1, 1, pageHeight);
         document.getElementById("search").focus();
     });
 
