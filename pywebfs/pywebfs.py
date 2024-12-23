@@ -426,6 +426,7 @@ JAVASCRIPT = """
     filesTable = document.getElementById("files");
     if (filesTable) {
         lastRow = filesTable.rows[filesTable.rows.length - 1];
+        filesTable.rows[2].querySelector('a').focus();
     }
     // quick filter table
     document.getElementById("search").addEventListener("keyup", function() {
@@ -453,7 +454,7 @@ JAVASCRIPT = """
 
     // keyboard navigation
     document.addEventListener('keydown', function(event) {
-        if (event.key === 'Enter') return;
+        if (['Enter', 'Tab'].includes(event.key)) return;
         const focusedElement = document.activeElement;
         if (document.activeElement.tagName === 'BODY') {
             document.getElementById("search").focus();
@@ -469,7 +470,6 @@ JAVASCRIPT = """
                     return;
                 }
             }
-            document.getElementById("search").focus();
             return;
         }
         if (event.key === 'ArrowDown') {
@@ -481,6 +481,16 @@ JAVASCRIPT = """
                     return;
                 }
             }
+            return;
+        }
+        if (event.key === 'End') {
+            event.preventDefault();
+            table.rows[table.rows.length - 1].querySelector('a').focus();
+            return;
+        }
+        if (event.key === 'Home') {
+            event.preventDefault();
+            table.rows[2].querySelector('a').focus();
             return;
         }
         if (focusedElement.tagName === 'A') {
@@ -1039,7 +1049,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             '<tr>\n<th colspan="100" class="header">',
             '  <div class="header">\n'
             '    <form name="search">\n'
-            '      <input type="text" name="search" id="search" autofocus tabindex="1" autocomplete="off">\n'
+            '      <input type="text" name="search" id="search" autocomplete="off">\n'
             '      <button type="submit" class="search" title="Search filenames in folder and subfolders"></button>\n'
         ]
         if not NO_SEARCH_TXT:
