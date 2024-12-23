@@ -425,7 +425,8 @@ JAVASCRIPT = """
     previousFilter = '';
     filesTable = document.getElementById("files");
     if (filesTable) {
-        lastRow = filesTable.rows[filesTable.rows.length - 1];
+        lastRow = filesTable.rows.length - 1;
+        firstRow = 2;
         filesTable.rows[2].querySelector('a').focus();
     }
     // quick filter table
@@ -436,19 +437,20 @@ JAVASCRIPT = """
         if (!filesTable) return;
         rows = filesTable.rows;
         filesTable.style.display = "none";
-        lastRow.children[0].style.borderBottomLeftRadius = "";
-        lastRow.lastElementChild.style.borderBottomRightRadius = "";
+        rows[lastRow].children[0].style.borderBottomLeftRadius = "";
+        rows[lastRow].lastElementChild.style.borderBottomRightRadius = "";
         for (var i = 2; i <rows.length ; i++) {
             var cell = rows[i].children[0];
             if (cell.innerText.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(input)) {
+                if (!firstRow) firstRow = i;
                 rows[i].style.display = "";
-                lastRow = rows[i];
+                lastRow = i;
             } else {
                 rows[i].style.display = "none";
             }
         }
-        lastRow.children[0].style.borderBottomLeftRadius = "15px";
-        lastRow.lastElementChild.style.borderBottomRightRadius = "15px";
+        rows[lastRow].children[0].style.borderBottomLeftRadius = "15px";
+        rows[lastRow].lastElementChild.style.borderBottomRightRadius = "15px";
         filesTable.style.display = "";
     });
 
@@ -458,7 +460,7 @@ JAVASCRIPT = """
         for (i = start; i > 1 && i<table.rows.length; i+=increment) {
             if (table.rows[i].style.display !== 'none') {
                 nbRows++;
-                if (nbRows == nb) {
+                if (nbRows == nb || i == lastRow || i == firstRow) {
                     topFocus = table.rows[i].getBoundingClientRect().top;
                     bottomHeader = table.tHead.getBoundingClientRect().bottom;
                     if (topFocus < bottomHeader)
@@ -495,9 +497,8 @@ JAVASCRIPT = """
         if(rowIndex == 0) rowIndex = 1;
         if (event.key === 'ArrowUp') return focusFile(event, table, rowIndex-1, -1, 1);
         if (event.key === 'ArrowDown') return focusFile(event, table, rowIndex+1, 1, 1);
-        if (event.key === 'End') return focusFile(event, table, table.rows.length-1, -1, 1);
-        if (event.key === 'Home') return focusFile(event, table, 2, 1, 1);
-        //pageHeight = table.querySelector('tbody').clientHeight/table.rows[2].clientHeight;
+        if (event.key === 'End') return focusFile(event, table, lastRow, -1, 1);
+        if (event.key === 'Home') return focusFile(event, table, firstRow, 1, 1);
         pageHeight = Math.floor(window.innerHeight/table.rows[2].clientHeight-2);
         if (event.key === 'PageUp') return focusFile(event, table, rowIndex-1, -1, pageHeight);
         if (event.key === 'PageDown') return focusFile(event, table, rowIndex+1, 1, pageHeight);
