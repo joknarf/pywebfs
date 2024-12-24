@@ -281,16 +281,19 @@ CSS = f"""
         background: url('data:image/svg+xml;utf8,{UPFOLDER_CSS}') no-repeat;
         width: 100px;
     }}
+    .rootfolder {{
+        background: url('data:image/svg+xml;utf8,{HOME_CSS}') no-repeat;
+    }}
     .sort {{
         background: url('data:image/svg+xml;utf8,{SORT_CSS}') no-repeat;
         text-indent: 15px !important;
     }}
-    .folder, .file, .link, .upfolder, .sort {{
+    .folder, .file, .link, .upfolder, .rootfolder, .sort {{
         display: inline-block;
         text-indent: 20px;
         background-size: 16px 16px;
     }}
-    .folder, .file, .link, .upfolder {{
+    .folder, .file, .link, .upfolder, .rootfolder {{
         background-position-x: 8px;
         background-position-y: 50%;
     }}
@@ -304,13 +307,14 @@ CSS = f"""
     }}
     tr.titles th {{
         background-color: #d5d5d5;
+        width: 1px;
     }}
     th.name {{
-        min-width: 100px;
+        width: 100px;
         padding-left: 10px;
     }}
     #files th.name {{
-        min-width: 200px;
+        width: 200px;
     }}
     table.searchresult tr td {{
         vertical-align: top;
@@ -345,7 +349,7 @@ CSS = f"""
         body {{
             -webkit-text-size-adjust: 180%;
         }}
-        .search, .searchtxt, .home, .folder, .file, .link, .upfolder, #files tr td:last-child a {{
+        .search, .searchtxt, .home, .folder, .file, .link, .upfolder, .rootfolder, #files tr td:last-child a {{
             background-size: 32px 32px;
             text-indent: 40px;
         }}
@@ -421,7 +425,7 @@ JAVASCRIPT = """
     if (filesTable) {
         lastRow = filesTable.rows.length - 1;
         firstRow = 2;
-        filesTable.rows[2].querySelector('a').focus();
+        focusRow(2)
         setTimeout(() => {
             window.scrollTo(0, 0);
         }, 40);
@@ -451,6 +455,20 @@ JAVASCRIPT = """
         filesTable.style.display = "";
     });
 
+    function focusRow(rowIndex) {
+        anchor = filesTable.rows[rowIndex].querySelector('a');
+        anchor.focus();
+        path = document.getElementById("file");
+        if(! [".",".."].includes(anchor.innerHTML)) {
+            href = anchor.getAttribute("href")
+            path.href = href
+            path.textContent = "/" + decodeURIComponent(href);
+        }else{
+            path.href = "";
+            path.innerHTML = "";
+        }
+    }
+
     function focusFile(event, table, start, increment, nb) {
         event.preventDefault();
         nbRows = 0;
@@ -464,7 +482,7 @@ JAVASCRIPT = """
                         window.scrollBy(0, focusRect.top-bottomHeader);
                     if (focusRect.bottom > window.innerHeight-focusRect.height)
                         window.scrollBy(0, focusRect.bottom-window.innerHeight+focusRect.height);
-                    table.rows[i].querySelector('a').focus();
+                    focusRow(i);
                     break;
                 }
             }
@@ -713,13 +731,20 @@ def file_head():
 def file_folderup(path):
     """build folder up row"""
     if path == "./":
-        return ""
-    parentdir = os.path.dirname(path[1:].rstrip("/")).rstrip("/") + "/"
-    stat = os_stat("."+parentdir)
+        scan = os_scandir("./")
+        stat = os_stat("./")
+        folder = "."
+        classname = "rootfolder"
+    else:
+        folder = ".."
+        parentdir = os.path.dirname(path[1:].rstrip("/")).rstrip("/") + "/"
+        scan = os_scandir("."+parentdir)
+        stat = os_stat("."+parentdir)
+        classname = "upfolder"
     fields = [
-        '<td><a href="%s" class="upfolder">..</a></td>' % urllib.parse.quote(parentdir , errors='surrogatepass'),
+        f'<td><a href="../" class="{classname}">{folder}</a></td>',
         '<td></td>',
-        '<td>%s</td>' % len(tuple(os_scandir("."+parentdir))),
+        '<td>%s</td>' % len(tuple(scan)),
         '<td>items</td>',
         '<td>%s</td>' % get_username(stat.st_uid),
         '<td>%s</td>' % get_groupname(stat.st_gid),
@@ -1032,15 +1057,15 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         htmldoc = HTML.format(title=title, charset=ENC)
         htmldoc += '<body>\n'
 
-        href = '<a href="/" class="home" title="Home">&nbsp;</a>'
+        href = ['<a href="/" class="home" title="Home">&nbsp;</a>']
         fpath = "/"
         for dir in path.rstrip("/").split("/")[1:]:
             fpath += dir + "/"
-            href += '<a href="%s" class="path">/%s</a>' % (
+            href.append('<a href="%s" class="path">/%s</a>' % (
                 urllib.parse.quote(fpath, errors="surrogatepass"),
                 html.escape(dir, quote=False),
-            )
-        #htmldoc += '<div id="mask">\n'
+            ))
+        href.append('<a id=file class="path"></a>')
         header = [
             '<tr>\n<th colspan="100" class="header">',
             '  <div class="header">\n'
@@ -1053,7 +1078,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 '      <button type="submit" name="searchtxt" value=1 class="searchtxt" title="Search in text files"></button>\n'
             )
         header += [
-            f'    {href}'
+            f'    {"\n".join(href)}'
             '    </form>',
             '  </div>',
             '</th>\n</tr>\n',
