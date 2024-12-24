@@ -73,11 +73,6 @@ CSS = f"""
         font-family: -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;;
         font-size: 1em;
     }}
-    div {{
-        -webkit-box-sizing: border-box;
-        -moz-box-sizing: border-box;
-        box-sizing: border-box;
-    }}
     pre {{
         margin: 0;
         line-height: 105%
@@ -88,7 +83,6 @@ CSS = f"""
         border-radius: 10px;
         background-color: #eee;
         box-shadow: 0 0 20px rgba(0, 0, 0, 0.50);
-        border-spacing: 0;
         margin: 1px 10px 5px 5px;
     }}
     thead {{
@@ -428,6 +422,9 @@ JAVASCRIPT = """
         lastRow = filesTable.rows.length - 1;
         firstRow = 2;
         filesTable.rows[2].querySelector('a').focus();
+        setTimeout(() => {
+            window.scrollTo(0, 0);
+        }, 40);
     }
     // quick filter table
     document.getElementById("search").addEventListener("keyup", function() {
@@ -461,10 +458,12 @@ JAVASCRIPT = """
             if (table.rows[i].style.display !== 'none') {
                 nbRows++;
                 if (nbRows == nb || i == lastRow || i == firstRow) {
-                    topFocus = table.rows[i].getBoundingClientRect().top;
+                    focusRect = table.rows[i].getBoundingClientRect();
                     bottomHeader = table.tHead.getBoundingClientRect().bottom;
-                    if (topFocus < bottomHeader)
-                        window.scrollBy(0, topFocus-bottomHeader);
+                    if (focusRect.top < bottomHeader)
+                        window.scrollBy(0, focusRect.top-bottomHeader);
+                    if (focusRect.bottom > window.innerHeight-focusRect.height)
+                        window.scrollBy(0, focusRect.bottom-window.innerHeight+focusRect.height);
                     table.rows[i].querySelector('a').focus();
                     break;
                 }
