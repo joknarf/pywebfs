@@ -1177,6 +1177,9 @@ class HTTPFileServer(ThreadingHTTPServer):
             #     server_side=True
             # )
 
+    def handle_error(self, request, client_address):
+        return
+
 
 def log_message(*args):
     """log message"""
@@ -1215,12 +1218,11 @@ def daemon_d(action, pidfilepath, hostname=None, args=None):
         )
         with daemon_context:
             log_message("Starting server")
-            server = init_server(hostname, args)
-            try:
-                server.serve_forever()
-            except KeyboardInterrupt:
-                log_message("Stopping server")
-                sys.exit(0)
+            with init_server(hostname, args) as server:
+                try:
+                    server.serve_forever()
+                except KeyboardInterrupt:
+                    log_message("Stopping server")
 
 
 def init_server(hostname, args):
@@ -1309,13 +1311,12 @@ def main():
     if args.action:
         sys.exit(not daemon_d(args.action, pidfile, hostname, args))
     else:
-        server = init_server(hostname, args)
-        try:
-            server.serve_forever()
-        except KeyboardInterrupt:
-            log_message("Stopping server")
-            server.socket.close()
-            sys.exit(0)
+        with init_server(hostname, args) as server:
+            try:
+                server.serve_forever()
+            except KeyboardInterrupt:
+                log_message("Stopping server")
+                server.socket.close()
 
 
 if __name__ == "__main__":
