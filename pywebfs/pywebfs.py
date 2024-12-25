@@ -1080,7 +1080,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 '      <button type="submit" name="searchtxt" value=1 class="searchtxt" title="Search in text files"></button>\n'
             )
         header += [
-            f'    {"\n".join(href)}'
+            f'    {"".join(href)}'
             '    </form>',
             '  </div>',
             '</th>\n</tr>\n',
