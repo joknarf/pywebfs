@@ -918,7 +918,9 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         self.write_html(self.header)
         self.write_html('<tr class="titles"><th class="name"><div class="name">Name</div><div class="info" id="nameinfo">loading</div></th><th>Text</th><th style=width:100%></th></tr>')
         self.write_html('</thead>\n<tbody>\n')
-        nbfiles, size = self.search_walk(path, rex, len(path), [0,0])
+        nbfiles, size = (0, 0)
+        if search:
+            nbfiles, size = self.search_walk(path, rex, len(path), [0,0])
         self.write_html('</tbody>\n</table>')
         s = "s" if nbfiles>1 else ""
         self.write_html(f'<p id="info">{nbfiles} file{s} - {" ".join(convert_size(size))}</p>')
