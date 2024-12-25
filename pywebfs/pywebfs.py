@@ -310,13 +310,11 @@ CSS = f"""
         width: 1px;
     }}
     th.name {{
-        min-width: 100px;
-        width: 100px;
+        min-width: 150px;
         padding-left: 10px;
     }}
     #files th.name {{
         min-width: 200px;
-        width: 200px;
     }}
     table.searchresult tr td {{
         vertical-align: top;
