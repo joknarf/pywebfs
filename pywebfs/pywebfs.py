@@ -416,7 +416,7 @@ JAVASCRIPT = """
         Array.from(table.querySelectorAll('tbody tr:nth-child(n+1)'))
             .sort(comparer(Array.from(th.parentNode.children).indexOf(th), this.asc = !this.asc))
             .forEach(tr => tbody.appendChild(tr) );
-        if (uprow.cells[0].textContent=='..')
+        if (['.', '..'].includes(uprow.cells[0].textContent))
             tbody.insertBefore(uprow, table.rows[2]);
         table.style.display = '';
     })));
