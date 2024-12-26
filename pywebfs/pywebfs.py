@@ -9,6 +9,7 @@ import argparse
 import urllib
 import html
 import base64
+import unicodedata
 from functools import lru_cache
 
 # python 3.6 no TheedingHTTPServer
@@ -529,6 +530,7 @@ JAVASCRIPT = """
 """
 #JAVASCRIPT=f"<script>\n{JAVASCRIPT}\n</script>"
 RE_AGENT = re.compile(r"(Edg|Chrome|Safari|Firefox|Opera|Lynx)[^ ]*")
+RE_ACCENT = re.compile(r"[\u0300-\u036f]")
 
 class BadStat:
     st_size = 0
@@ -948,7 +950,10 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             self.write_html("</tbody></table>\n")
             self.write_html('<p id="info">0 file - 0 B</p>\n')
             return
-        entries = sorted(entries, key=lambda entry: (not entry.is_dir(), entry.name.lower()))
+        entries = sorted(entries, key=lambda entry: (
+            not entry.is_dir(), 
+            RE_ACCENT.sub("", unicodedata.normalize("NFD", entry.name.lower()))
+        ))
         nbfiles = 0
         size = 0
         for entry in entries:
