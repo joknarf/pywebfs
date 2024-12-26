@@ -483,22 +483,23 @@ JAVASCRIPT = """
                     if (focusRect.bottom > window.innerHeight-focusRect.height)
                         window.scrollBy(0, focusRect.bottom-window.innerHeight+focusRect.height);
                     focusRow(i);
-                    break;
+                    return;
                 }
             }
         }
+        if (start < 2)  start = 2;
+        if (start <= lastRow)
+            focusRow(start);
     }
 
     // keyboard navigation
     document.addEventListener('keydown', function(event) {
         if (['Enter', 'Tab'].includes(event.key)) return;
         const focusedElement = document.activeElement;
-        if (document.activeElement.tagName === 'BODY') {
-            document.getElementById("search").focus();
-            return;
-        }
-        const table = focusedElement.closest('table');
-        rowIndex = focusedElement.closest('tr').rowIndex;
+        const table = document.querySelector('table');
+
+        if (document.activeElement.tagName === 'BODY') rowIndex = 2;
+        else rowIndex = focusedElement.closest('tr').rowIndex;
         if (focusedElement.tagName === 'A') {
             if (event.key === 'ArrowRight') {
                 event.preventDefault();
@@ -511,7 +512,7 @@ JAVASCRIPT = """
                 return;
             }
         }
-        if(rowIndex == 0) rowIndex = 1;
+        if (rowIndex == 0) rowIndex = 1;
         if (event.key === 'ArrowUp') return focusFile(event, table, rowIndex-1, -1, 1);
         if (event.key === 'ArrowDown') return focusFile(event, table, rowIndex+1, 1, 1);
         if (event.key === 'End') return focusFile(event, table, lastRow, -1, 1);
