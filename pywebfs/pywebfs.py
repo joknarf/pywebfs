@@ -11,7 +11,7 @@ import html
 import base64
 import unicodedata
 from functools import lru_cache
-
+from uuid import uuid4
 # python 3.6 no TheedingHTTPServer
 try: 
     from http.server import (
@@ -28,6 +28,7 @@ from http import HTTPStatus
 import ssl
 import urllib.parse
 from datetime import datetime, timedelta, timezone
+from time import sleep
 from fnmatch import fnmatchcase
 import ipaddress
 import secrets
@@ -1062,8 +1063,8 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         if not os.path.isdir("."+path):
             return self.download("."+path, inline=True)
         title = f"{self.server.title} - {html.escape(path, quote=False)}"
-        htmldoc = HTML.format(title=title, charset=ENC)
-        htmldoc += '<body>\n'
+        htmldoc = [HTML.format(title=title, charset=ENC)]
+        htmldoc.append('<body>')
 
         href = ['<a href="/" class="home" title="Home">&nbsp;</a>']
         fpath = "/"
@@ -1076,17 +1077,17 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         href.append('<a id=file class="path"></a>')
         header = [
             '<tr>\n<th colspan="100" class="header">',
-            '  <div class="header">\n'
-            '    <form name="search">\n'
-            '      <input type="text" name="search" id="search" autocomplete="off">\n'
-            '      <button type="submit" class="search" title="Search filenames in folder and subfolders"></button>\n'
+            '  <div class="header">',
+            '    <form name="search">',
+            '      <input type="text" name="search" id="search" autocomplete="off">',
+            '      <button type="submit" class="search" title="Search filenames in folder and subfolders"></button>',
         ]
         if not NO_SEARCH_TXT:
             header.append(
-                '      <button type="submit" name="searchtxt" value=1 class="searchtxt" title="Search in text files"></button>\n'
+                '      <button type="submit" name="searchtxt" value=1 class="searchtxt" title="Search in text files"></button>'
             )
         header += [
-            f'    {"".join(href)}'
+            f'    {"".join(href)}',
             '    </form>',
             '  </div>',
             '</th>\n</tr>\n',
@@ -1097,7 +1098,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         self.send_header("Content-type", "text/html")
         self.end_headers()
 
-        self.write_html(htmldoc)
+        self.write_html("\n".join(htmldoc))
 
         if p.query:
             if searchtxt:
@@ -1130,10 +1131,11 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
 
             if username == self.server.userp[0] and self.server.userp[1] == password:
                 self.send_response(302)
-                self.send_header('Set-Cookie', f'session={username}')
+                self.send_header('Set-Cookie', f'session={self.server.uuid}; Path=/')
                 self.send_header('Location', '/')
                 self.end_headers()
             else:
+                sleep(2)
                 self.send_response(302)
                 self.send_header('Location', '/login')
                 self.end_headers()
@@ -1148,14 +1150,15 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
 
             if username == self.server.userp[0] and self.server.userp[1] == password:
                 return True
+            else:
+                sleep(2)
 
         cookie_header = self.headers.get('Cookie')
         if cookie_header:
             cookie = SimpleCookie(cookie_header)
             session = cookie.get('session')
-            if session and session.value == self.server.userp[0]:
+            if session and session.value == self.server.uuid:
                 return True
-
         return False
 
     do_PUT    = devnull
@@ -1168,6 +1171,7 @@ class HTTPFileServer(ThreadingHTTPServer):
     def __init__(self, title, certfiles, userp, *args, **kwargs):
         """add title property"""
         self.title = title
+        self.uuid = str(uuid4())
         self._auth = None
         self.userp = userp
         if userp[0]:
