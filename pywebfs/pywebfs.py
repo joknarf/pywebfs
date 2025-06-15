@@ -12,6 +12,7 @@ import base64
 import unicodedata
 from functools import lru_cache
 from uuid import uuid4
+from secrets import token_urlsafe
 # python 3.6 no TheedingHTTPServer
 try: 
     from http.server import (
@@ -996,8 +997,20 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         else:
             self.send_error(HTTPStatus.NOT_FOUND, "File not found")
 
-    def do_checkauth(self):
+    def do_checkauth(self, url_token):
         """check authentication"""
+        token = os.environ.get("PYWEBFS_TOKEN")
+        if token and self.get_cookie("session") != self.server.uuid:
+            if url_token != token:
+                self.send_error(HTTPStatus.UNAUTHORIZED, "Invalid token")
+                return False
+            else:
+                self.send_response(302)
+                self.set_cookie('session', self.server.uuid)
+                self.send_header('Location', self.path)
+                self.end_headers()
+                return False
+                
         if self.path != '/login':
             if self.is_authenticated():
                 return True
@@ -1043,15 +1056,16 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             return self.send_data(CSS)
         elif self.path == "/pywebfs.js":
             return self.send_data(JAVASCRIPT)
-        if self.server.userp[0]:
-            if not self.do_checkauth():
-                return
         p = urllib.parse.urlparse(self.path)
         q = urllib.parse.parse_qs(p.query)
+        token = q.get("token", [""])[0]
         search = q.get("search", [""])[0]
         searchtxt = q.get("searchtxt", [""])[0]
         download = q.get("download", [""])[0]
         noperm = q.get("noperm", [""])[0]
+        if not self.do_checkauth(token):
+            return
+
         global NO_PERM
         if noperm == "1":
             NO_PERM = True
@@ -1131,7 +1145,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
 
             if username == self.server.userp[0] and self.server.userp[1] == password:
                 self.send_response(302)
-                self.send_header('Set-Cookie', f'session={self.server.uuid}; Path=/')
+                self.set_cookie('session', self.server.uuid)
                 self.send_header('Location', '/')
                 self.end_headers()
             else:
@@ -1140,8 +1154,31 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
                 self.send_header('Location', '/login')
                 self.end_headers()
 
+    def get_cookie(self, cookie_name):
+        """get cookie from request"""
+        cookie_header = self.headers.get('Cookie')
+        if cookie_header:
+            cookie = SimpleCookie(cookie_header)
+            cookie_val = cookie.get(cookie_name)
+            if cookie_val:
+                return cookie_val.value
+        return None
+    
+    def set_cookie(self, cookie_name, value, max_age=None):
+        """set cookie in response"""
+        cookie = SimpleCookie()
+        cookie[cookie_name] = value
+        cookie[cookie_name]['path'] = '/'
+        cookie[cookie_name]['httponly'] = True
+        cookie[cookie_name]['samesite'] = 'Strict'
+        if max_age:
+            cookie[cookie_name]['max-age'] = max_age
+        self.send_header('Set-Cookie', cookie.output(header=''))
+
     def is_authenticated(self):
         """check if user is authenticated"""
+        if self.server.userp[0] is None:
+            return True
         auth_header = self.headers.get('Authorization')
         if auth_header and auth_header.startswith('Basic '):
             encoded_credentials = auth_header.split(' ')[1]
@@ -1153,12 +1190,9 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             else:
                 sleep(2)
 
-        cookie_header = self.headers.get('Cookie')
-        if cookie_header:
-            cookie = SimpleCookie(cookie_header)
-            session = cookie.get('session')
-            if session and session.value == self.server.uuid:
-                return True
+        session = self.get_cookie('session')
+        if session and session == self.server.uuid:
+            return True
         return False
 
     do_PUT    = devnull
@@ -1237,11 +1271,12 @@ def daemon_d(action, pidfilepath, hostname=None, args=None):
                     log_message("Stopping server")
 
 
-def init_server(hostname, args):
+def init_server(hostname, args, token=None):
     """initialize http server"""
     prefix = "https" if args.cert else "http"
+    suffix = f"?token={token}" if token else ""
     log_message(f"Starting {prefix} server listening on {args.listen} port {args.port}")
-    log_message(f"{prefix} server : {prefix}://{hostname}:{args.port}")
+    log_message(f"{prefix} server : {prefix}://{hostname}:{args.port}{suffix}")
     try:
         return HTTPFileServer(
             args.title, 
@@ -1281,9 +1316,11 @@ def main():
     parser.add_argument("-s", "--start", action="store_true", help="Start as a daemon")
     parser.add_argument("-g", "--gencert", action="store_true", help="https server self signed cert")
     parser.add_argument("--nosearch", action="store_true", help="No search in text files button")
-    parser.add_argument("--noperm", action="store_true", help="No search in text files button")
+    parser.add_argument("--noperm", action="store_true", help="No display permissions and owner/group")
     parser.add_argument("-H", "--hidden", nargs="+", help="file/folder patterns to hide")
+    parser.add_argument("-T", "--tokenurl", action="store_true", help="use url token for authentication")
     parser.add_argument("action", nargs="?", help="daemon action start/stop/restart/status", choices=["start","stop","restart","status"])
+    
     args = parser.parse_args()
     if os.path.isdir(args.dir):
         try:
@@ -1315,6 +1352,11 @@ def main():
     if args.user and not args.password:
         args.password = secrets.token_urlsafe(13)
         print(f"Generated password: {args.password}")
+    if args.tokenurl:
+        token = os.environ.get("PYWEBFS_TOKEN", token_urlsafe())
+        os.environ["PYWEBFS_TOKEN"] = token
+    else:
+        token = None
     pidfile = f"{PYWFSDIR}/pwfs_{args.listen}:{args.port}"
 
     if args.action == "restart":
@@ -1323,7 +1365,7 @@ def main():
     if args.action:
         sys.exit(not daemon_d(args.action, pidfile, hostname, args))
     else:
-        with init_server(hostname, args) as server:
+        with init_server(hostname, args, token) as server:
             try:
                 server.serve_forever()
             except KeyboardInterrupt:
