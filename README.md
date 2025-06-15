@@ -34,6 +34,7 @@ $ pywebfs
 * Search files by name recursively with multiple word any order
 * Search text in files recursively (disable feature with --nosearch)
 * Basic Auth support (single user)
+* Safe url token Auth
 * HTTPS support
 * HTTPS self-signed certificate generator
 * Display owner/group/permissions (POSIX) (disable feature with --noperm)
@@ -51,6 +52,13 @@ $ pywebfs --dir /mydir --user myuser [--password mypass]
 $ pywebfs -d /mydir -u myuser [-P mypass]
 ```
 Generated password is given if no `--pasword` option
+
+## Safe url token auth
+```
+$ pywebfs --dir /mydir --tokenurl
+$ pywebfs --d /mydir --T
+```
+A Token is generated, unless PYWEBFS_TOKEN environment variable is set
 
 ## HTTPS server
 
