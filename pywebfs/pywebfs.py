@@ -1000,13 +1000,13 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
     def do_checkauth(self, url_token):
         """check authentication"""
         token = os.environ.get("PYWEBFS_TOKEN")
-        if token and self.get_cookie("session") != self.server.uuid:
+        if token and self.get_cookie("token") != token:
             if url_token != token:
                 self.send_error(HTTPStatus.UNAUTHORIZED, "Invalid token")
                 return False
             else:
                 self.send_response(302)
-                self.set_cookie('session', self.server.uuid)
+                self.set_cookie('token', token)
                 self.send_header('Location', self.path)
                 self.end_headers()
                 return False
