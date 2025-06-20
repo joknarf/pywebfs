@@ -997,7 +997,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         else:
             self.send_error(HTTPStatus.NOT_FOUND, "File not found")
 
-    def do_checkauth(self, url_token):
+    def do_checkauth(self, path, url_token):
         """check authentication"""
         token = os.environ.get("PYWEBFS_TOKEN")
         if token and self.get_cookie("token") != token:
@@ -1007,7 +1007,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
             else:
                 self.send_response(302)
                 self.set_cookie('token', token)
-                self.send_header('Location', self.path)
+                self.send_header('Location', path)
                 self.end_headers()
                 return False
                 
@@ -1063,7 +1063,7 @@ class HTTPFileHandler(SimpleHTTPRequestHandler):
         searchtxt = q.get("searchtxt", [""])[0]
         download = q.get("download", [""])[0]
         noperm = q.get("noperm", [""])[0]
-        if not self.do_checkauth(token):
+        if not self.do_checkauth(p.path, token):
             return
 
         global NO_PERM
