@@ -199,7 +199,7 @@ jobs:
 
       - name: Build RPM
         run: |
-          fpm $FPM_BASE -t rpm --prefix=/usr --description="$DESC" $TOOL_PATH=/bin/$TOOL
+          fpm $FPM_BASE -t rpm --prefix=/usr --description="$DESC" dist/
           ln -s $TOOL-$VERSION-1.aarch64.rpm $TOOL-aarch64.rpm
 
       - name: Checkout yum
