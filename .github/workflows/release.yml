@@ -27,7 +27,9 @@ env:
 jobs:
   build-linux-x86_64:
     runs-on: ubuntu-latest
-
+    env:
+      ARCH: x86_64
+      ARCHDEB: amd64
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -43,16 +45,10 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Set environment variables
-        run: |
-          OUT=${TOOL}-linux-x86_64
-          echo "OUT=$OUT" >>$GITHUB_ENV
-          echo "TOOL_PATH=dist/$OUT" >>$GITHUB_ENV
-
       - name: Build with manylinux (x86_64)
         run: |
           set -e
-          IMAGE=quay.io/pypa/manylinux2014_x86_64
+          IMAGE=quay.io/pypa/manylinux2014_$ARCH
           docker run --rm \
             -v "$PWD:/src" \
             $IMAGE \
@@ -77,7 +73,6 @@ jobs:
         run: |
           BUILD_EPOCH=$(date +%s)
           fpm $FPM_BASE -t deb --prefix=/usr --description="$DESC" --deb-field "Build-Date:$BUILD_EPOCH" -C dist .
-          ln -s ${TOOL}_${VERSION}_amd64.deb ${TOOL}_amd64.deb
 
       - name: Checkout deb
         uses: actions/checkout@v3
@@ -88,10 +83,12 @@ jobs:
 
       - name: update deb repo
         run: |
-          cp ${TOOL}_amd64.deb deb/pool/main
+          PKG=${TOOL}_${ARCHDEB}.deb
+          PKGVER=${TOOL}_${VERSION}_$ARCHDEB.deb
+          cp $PKGVER deb/pool/main/$PKG
           cd deb
-          git add pool/main/${TOOL}_amd64.deb
-          git commit -m "Update ${TOOL}_amd64.deb to $VERSION" || echo "No changes to commit"
+          git add pool/main/$PKG
+          git commit -m "Update $PKG to $VERSION" || echo "No changes to commit"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.JOKNARF_YUM_TOKEN }}
@@ -99,7 +96,6 @@ jobs:
       - name: Build RPM
         run: |
           fpm $FPM_BASE -t rpm --prefix=/usr --description="$DESC" --rpm-tag '%define _build_id_links none' --rpm-tag '%undefine _missing_build_ids_terminate_build' -C dist .
-          ln -s $TOOL-$VERSION-1.x86_64.rpm $TOOL-x86_64.rpm
 
       - name: Checkout yum
         uses: actions/checkout@v3
@@ -110,10 +106,12 @@ jobs:
 
       - name: Commit & Push
         run: |
-          cp $TOOL-x86_64.rpm yum/
+          PKG=$TOOL-$ARCH.rpm
+          PKGVER=$TOOL-$VERSION-1.$ARCH.rpm
+          cp $PKGVER yum/$PKG
           cd yum
-          git add $TOOL-x86_64.rpm
-          git commit -m "Update $TOOL-x86_64.rpm to $VERSION" || echo "No changes to commit"
+          git add $PKG
+          git commit -m "Update $PKG to $VERSION" || echo "No changes to commit"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.JOKNARF_YUM_TOKEN }}
@@ -124,11 +122,13 @@ jobs:
           files: |
             *.rpm
             *.deb
-            dist/*
 
   build-linux-aarch64:
     runs-on: ubuntu-24.04-arm
     needs: build-linux-x86_64
+    env:
+      ARCH: aarch64
+      ARCHDEB: arm64
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -144,23 +144,17 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Set environment variables
-        run: |
-          OUT=${TOOL}-linux-aarch64
-          echo "OUT=$OUT" >>$GITHUB_ENV
-          echo "TOOL_PATH=dist/$OUT" >>$GITHUB_ENV
-
       - name: Build with manylinux (aarch64)
         run: |
           set -e
-          IMAGE=quay.io/pypa/manylinux2014_aarch64
+          IMAGE=quay.io/pypa/manylinux2014_$ARCH
           docker run --rm \
             -v "$PWD:/src" \
             $IMAGE \
             bash -c "
               set -e
               cd /src
-              curl -Ls https://micro.mamba.pm/api/micromamba/linux-aarch64/latest| tar -xvj bin/micromamba
+              curl -Ls https://micro.mamba.pm/api/micromamba/linux-$ARCH/latest| tar -xvj bin/micromamba
               mv bin/micromamba /usr/local/bin/
               micromamba create -y -c conda-forge python=3.9 -p /opt/python39
               /opt/python39/bin/python -m venv .venv
@@ -178,7 +172,6 @@ jobs:
         run: |
           BUILD_EPOCH=$(date +%s)
           fpm $FPM_BASE -t deb --prefix=/usr --description="$DESC" --deb-field "Build-Date:$BUILD_EPOCH" -C dist .
-          ln -s ${TOOL}_${VERSION}_arm64.deb ${TOOL}_arm64.deb
 
       - name: Checkout deb
         uses: actions/checkout@v3
@@ -189,10 +182,12 @@ jobs:
 
       - name: update deb repo
         run: |
-          cp ${TOOL}_arm64.deb deb/pool/main
+          PKG=${TOOL}_$ARCHDEB.deb
+          PKGVER=${TOOL}_${VERSION}_$ARCHDEB.deb
+          cp $PKGVER deb/pool/main/$PKG
           cd deb
-          git add pool/main/${TOOL}_arm64.deb
-          git commit -m "Update ${TOOL}_arm64.deb to $VERSION" || echo "No changes to commit"
+          git add pool/main/$PKG
+          git commit -m "Update $PKG to $VERSION" || echo "No changes to commit"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.JOKNARF_YUM_TOKEN }}
@@ -200,7 +195,6 @@ jobs:
       - name: Build RPM
         run: |
           fpm $FPM_BASE -t rpm --prefix=/usr --description="$DESC" --rpm-tag '%define _build_id_links none' --rpm-tag '%undefine _missing_build_ids_terminate_build' -C dist .
-          ln -s $TOOL-$VERSION-1.aarch64.rpm $TOOL-aarch64.rpm
 
       - name: Checkout yum
         uses: actions/checkout@v3
@@ -211,10 +205,12 @@ jobs:
 
       - name: update yum repo
         run: |
-          cp $TOOL-aarch64.rpm yum/
+          PKG=$TOOL-$ARCH.rpm
+          PKGVER=$TOOL-$VERSION-1.$ARCH.rpm
+          cp $PKGVER yum/PKG
           cd yum
-          git add $TOOL-aarch64.rpm
-          git commit -m "Update $TOOL-aarch64.rpm to $VERSION" || echo "No changes to commit"
+          git add $PKG
+          git commit -m "Update $PKG to $VERSION" || echo "No changes to commit"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.JOKNARF_YUM_TOKEN }}
@@ -225,7 +221,6 @@ jobs:
           files: |
             *.rpm
             *.deb
-            dist/*
 
   build-macos-x86_64:
     runs-on: macos-15-intel
