@@ -98,8 +98,7 @@ jobs:
 
       - name: Build RPM
         run: |
-          fpm $FPM_BASE -t rpm --prefix=/usr --description="$DESC" --rpm-tag '%define _build
-_id_links none' --rpm-tag '%undefine _missing_build_ids_terminate_build' -C dist .
+          fpm $FPM_BASE -t rpm --prefix=/usr --description="$DESC" --rpm-tag '%define _build_id_links none' --rpm-tag '%undefine _missing_build_ids_terminate_build' -C dist .
           ln -s $TOOL-$VERSION-1.x86_64.rpm $TOOL-x86_64.rpm
 
       - name: Checkout yum
@@ -200,8 +199,7 @@ _id_links none' --rpm-tag '%undefine _missing_build_ids_terminate_build' -C dist
 
       - name: Build RPM
         run: |
-          fpm $FPM_BASE -t rpm --prefix=/usr --description="$DESC" --rpm-tag '%define _build
-_id_links none' --rpm-tag '%undefine _missing_build_ids_terminate_build' -C dist .
+          fpm $FPM_BASE -t rpm --prefix=/usr --description="$DESC" --rpm-tag '%define _build_id_links none' --rpm-tag '%undefine _missing_build_ids_terminate_build' -C dist .
           ln -s $TOOL-$VERSION-1.aarch64.rpm $TOOL-aarch64.rpm
 
       - name: Checkout yum
