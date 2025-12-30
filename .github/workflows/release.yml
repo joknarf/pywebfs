@@ -1,0 +1,412 @@
+name: Build and Release Packages
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+env:
+  TOOL: ${{ github.event.repository.name }}
+  #TOOL_PATH: ${{ github.event.repository.name }}
+  DESC: Simple HTTP File Server
+  VERSION: ${{ github.event.release.tag_name }}
+  VERSION_PY: pywebfs/version.py
+  TOOL_PY: pywebfs/pywebfs.py
+  FPM_BASE: >
+    -s dir
+    --license=MIT
+    --maintainer=${{ github.repository_owner }}
+    --vendor=https://joknarf.github.io/joknarf-tools
+    -m joknarf@free.fr
+    -n ${{ github.event.repository.name }}
+    --url=https://github.com/${{ github.repository }}
+    -v ${{ github.event.release.tag_name }}
+
+jobs:
+  build-linux-x86_64:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y ruby ruby-dev build-essential rpm
+          sudo gem install --no-document fpm
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Set environment variables
+        run: |
+          OUT=${TOOL}-linux-x86_64
+          echo "OUT=$OUT" >>$GITHUB_ENV
+          echo "TOOL_PATH=dist/$OUT" >>$GITHUB_ENV
+
+      - name: Build with manylinux (x86_64)
+        run: |
+          set -e
+          IMAGE=quay.io/pypa/manylinux2014_x86_64
+          docker run --rm \
+            -v "$PWD:/src" \
+            $IMAGE \
+            bash -c "
+              set -e
+              cd /src
+              curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
+              mv bin/micromamba /usr/local/bin/
+              micromamba create -y -c conda-forge python=3.9 -p /opt/python39
+              /opt/python39/bin/python -m venv .venv
+              source .venv/bin/activate
+              pip install wheel
+              pip install pyinstaller $TOOL
+              echo \"__version__ = '$VERSION'\" >$VERSION_PY
+              pyinstaller -D --name=$TOOL $TOOL_PY
+              mkdir dist/libexec dist/bin
+              mv dist/$TOOL dist/libexec
+              ln -s ../libexec/$TOOL/$TOOL dist/bin/$TOOL
+            "
+
+      - name: Build DEB
+        run: |
+          BUILD_EPOCH=$(date +%s)
+          fpm $FPM_BASE -t deb --prefix=/usr --description="$DESC" --deb-field "Build-Date:$BUILD_EPOCH" dist/
+          ln -s ${TOOL}_${VERSION}_amd64.deb ${TOOL}_amd64.deb
+
+      - name: Checkout deb
+        uses: actions/checkout@v3
+        with:
+          repository: joknarf/deb
+          token: ${{ secrets.JOKNARF_YUM_TOKEN }}
+          path: deb
+
+      - name: update deb repo
+        run: |
+          cp ${TOOL}_amd64.deb deb/pool/main
+          cd deb
+          git add pool/main/${TOOL}_amd64.deb
+          git commit -m "Update ${TOOL}_amd64.deb to $VERSION" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.JOKNARF_YUM_TOKEN }}
+
+      - name: Build RPM
+        run: |
+          fpm $FPM_BASE -t rpm --prefix=/usr --description="$DESC" dist/
+          ln -s $TOOL-$VERSION-1.x86_64.rpm $TOOL-x86_64.rpm
+
+      - name: Checkout yum
+        uses: actions/checkout@v3
+        with:
+          repository: joknarf/yum
+          token: ${{ secrets.JOKNARF_YUM_TOKEN }}
+          path: yum
+
+      - name: Commit & Push
+        run: |
+          cp $TOOL-x86_64.rpm yum/
+          cd yum
+          git add $TOOL-x86_64.rpm
+          git commit -m "Update $TOOL-x86_64.rpm to $VERSION" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.JOKNARF_YUM_TOKEN }}
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            *.rpm
+            *.deb
+            dist/*
+
+  build-linux-aarch64:
+    runs-on: ubuntu-24.04-arm
+    needs: build-linux-x86_64
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y ruby ruby-dev build-essential rpm
+          sudo gem install --no-document fpm
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Set environment variables
+        run: |
+          OUT=${TOOL}-linux-aarch64
+          echo "OUT=$OUT" >>$GITHUB_ENV
+          echo "TOOL_PATH=dist/$OUT" >>$GITHUB_ENV
+
+      - name: Build with manylinux (aarch64)
+        run: |
+          set -e
+          IMAGE=quay.io/pypa/manylinux2014_aarch64
+          docker run --rm \
+            -v "$PWD:/src" \
+            $IMAGE \
+            bash -c "
+              set -e
+              cd /src
+              curl -Ls https://micro.mamba.pm/api/micromamba/linux-aarch64/latest| tar -xvj bin/micromamba
+              mv bin/micromamba /usr/local/bin/
+              micromamba create -y -c conda-forge python=3.9 -p /opt/python39
+              /opt/python39/bin/python -m venv .venv
+              source .venv/bin/activate
+              pip install wheel
+              pip install pyinstaller $TOOL
+              echo \"__version__ = '$VERSION'\" >$VERSION_PY
+              pyinstaller -D --name=$TOOL $TOOL_PY
+              mkdir dist/libexec dist/bin
+              mv dist/$TOOL dist/libexec
+              ln -s ../libexec/$TOOL/$TOOL dist/bin/$TOOL
+            "
+
+      - name: Build DEB
+        run: |
+          BUILD_EPOCH=$(date +%s)
+          fpm $FPM_BASE -t deb --prefix=/usr --description="$DESC" --deb-field "Build-Date:$BUILD_EPOCH" dist/
+          ln -s ${TOOL}_${VERSION}_arm64.deb ${TOOL}_arm64.deb
+
+      - name: Checkout deb
+        uses: actions/checkout@v3
+        with:
+          repository: joknarf/deb
+          token: ${{ secrets.JOKNARF_YUM_TOKEN }}
+          path: deb
+
+      - name: update deb repo
+        run: |
+          cp ${TOOL}_arm64.deb deb/pool/main
+          cd deb
+          git add pool/main/${TOOL}_arm64.deb
+          git commit -m "Update ${TOOL}_arm64.deb to $VERSION" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.JOKNARF_YUM_TOKEN }}
+
+      - name: Build RPM
+        run: |
+          fpm $FPM_BASE -t rpm --prefix=/usr --description="$DESC" $TOOL_PATH=/bin/$TOOL
+          ln -s $TOOL-$VERSION-1.aarch64.rpm $TOOL-aarch64.rpm
+
+      - name: Checkout yum
+        uses: actions/checkout@v3
+        with:
+          repository: joknarf/yum
+          token: ${{ secrets.JOKNARF_YUM_TOKEN }}
+          path: yum
+
+      - name: update yum repo
+        run: |
+          cp $TOOL-aarch64.rpm yum/
+          cd yum
+          git add $TOOL-aarch64.rpm
+          git commit -m "Update $TOOL-aarch64.rpm to $VERSION" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.JOKNARF_YUM_TOKEN }}
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            *.rpm
+            *.deb
+            dist/*
+
+  build-macos-x86_64:
+    runs-on: macos-15-intel
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Set environment variables
+        run: |
+          OUT=${TOOL}-darwin-amd64
+          echo "OUT=$OUT" >>$GITHUB_ENV
+          echo "TOOL_PATH=dist/$OUT" >>$GITHUB_ENV
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build with macos intel
+        run: |
+          set -e
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install wheel
+          pip install pyinstaller $TOOL
+          echo "__version__ = '$VERSION'" >$VERSION_PY
+          pyinstaller -D --name=$TOOL $TOOL_PY
+          tar -C dist -cf $OUT.tar $TOOL
+          gzip $OUT.tar
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Checkout Homebrew tap
+        uses: actions/checkout@v3
+        with:
+          repository: joknarf/homebrew-tools
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+
+      - name: Update formula
+        run: |
+          URL="https://github.com/${{ github.repository }}/releases/download/${VERSION}/$OUT.tar.gz"
+          SHA256=$(shasum -a 256 $OUT.tar.gz | awk '{print $1}')
+          FORMULA_FILE=homebrew-tap/Formula/$TOOL.rb
+          sed -i -e "s|AMD64 =.*|AMD64 = { url: \"${URL}\", sha256: \"${SHA256}\" }|" $FORMULA_FILE
+          sed -i -e "s|version \".*\"|version \"${VERSION}\"|" $FORMULA_FILE
+
+      - name: Commit & Push
+        run: |
+          cd homebrew-tap
+          git add Formula/$TOOL.rb
+          git commit -m "Update $TOOL formula to $VERSION" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            *.tar.gz
+
+  build-macos-arm64:
+    runs-on: macos-14
+    needs: build-macos-x86_64
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Set environment variables
+        run: |
+          OUT=${TOOL}-darwin-arm64
+          echo "OUT=$OUT" >>$GITHUB_ENV
+          echo "TOOL_PATH=dist/$OUT" >>$GITHUB_ENV
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build with macos arm64
+        run: |
+          set -e
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install wheel
+          pip install pyinstaller $TOOL
+          echo "__version__ = '$VERSION'" >$VERSION_PY
+          pyinstaller -D --name=$TOOL $TOOL_PY
+          tar -C dist -cf $OUT.tar $TOOL
+          gzip $OUT.tar
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Checkout Homebrew tap
+        uses: actions/checkout@v3
+        with:
+          repository: joknarf/homebrew-tools
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+
+      - name: Update formula
+        run: |
+          URL="https://github.com/${{ github.repository }}/releases/download/${VERSION}/$OUT.tar.gz"
+          SHA256=$(shasum -a 256 $OUT.tar.gz | awk '{print $1}')
+          FORMULA_FILE=homebrew-tap/Formula/$TOOL.rb
+          sed -i -e "s|ARM64 =.*|ARM64 = { url: \"${URL}\", sha256: \"${SHA256}\" }|" $FORMULA_FILE
+          sed -i -e "s|version \".*\"|version \"${VERSION}\"|" $FORMULA_FILE
+
+      - name: Commit & Push
+        run: |
+          cd homebrew-tap
+          git add Formula/$TOOL.rb
+          git commit -m "Update $TOOL formula to $VERSION" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            *.tar.gz
+
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Set environment variables
+        shell: bash
+        run: |
+          OUT=${TOOL}-windows-x86_64
+          echo "OUT=$OUT" >>$GITHUB_ENV
+          echo "__version__ = '$VERSION'" >$VERSION_PY
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build binary with PyInstaller
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install pyinstaller $env:TOOL
+          pyinstaller --onefile --name=$env:OUT $env:TOOL_PY
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/${{ env.OUT }}.exe
+
+  deploy-pypi:
+    runs-on: ubuntu-latest
+    needs: [build-linux-x86_64, build-linux-aarch64, build-macos-x86_64, build-macos-arm64, build-windows]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.x'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build
+    - name: Build package
+      run: python -m build
+    - name: Publish package
+      uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
