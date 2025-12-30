@@ -98,7 +98,8 @@ jobs:
 
       - name: Build RPM
         run: |
-          fpm $FPM_BASE -t rpm --prefix=/usr --description="$DESC" dist/
+          fpm $FPM_BASE -t rpm --prefix=/usr --description="$DESC" --rpm-tag '%define _build
+_id_links none' --rpm-tag '%undefine _missing_build_ids_terminate_build' -C dist .
           ln -s $TOOL-$VERSION-1.x86_64.rpm $TOOL-x86_64.rpm
 
       - name: Checkout yum
@@ -177,7 +178,7 @@ jobs:
       - name: Build DEB
         run: |
           BUILD_EPOCH=$(date +%s)
-          fpm $FPM_BASE -t deb --prefix=/usr --description="$DESC" --deb-field "Build-Date:$BUILD_EPOCH" dist/
+          fpm $FPM_BASE -t deb --prefix=/usr --description="$DESC" --deb-field "Build-Date:$BUILD_EPOCH" -C dist .
           ln -s ${TOOL}_${VERSION}_arm64.deb ${TOOL}_arm64.deb
 
       - name: Checkout deb
@@ -199,7 +200,8 @@ jobs:
 
       - name: Build RPM
         run: |
-          fpm $FPM_BASE -t rpm --prefix=/usr --description="$DESC" dist/
+          fpm $FPM_BASE -t rpm --prefix=/usr --description="$DESC" --rpm-tag '%define _build
+_id_links none' --rpm-tag '%undefine _missing_build_ids_terminate_build' -C dist .
           ln -s $TOOL-$VERSION-1.aarch64.rpm $TOOL-aarch64.rpm
 
       - name: Checkout yum
