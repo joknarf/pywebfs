@@ -62,6 +62,7 @@ jobs:
               yum install -y python3
               /usr/bin/python3 -m venv .venv
               source .venv/bin/activate
+              pip install --upgrade pip
               pip install wheel
               pip install pyinstaller $TOOL
               echo \"__version__ = '$VERSION'\" >$VERSION_PY
@@ -163,6 +164,7 @@ jobs:
               yum install -y python3
               /usr/bin/python3 -m venv .venv
               source .venv/bin/activate
+              pip install --upgrade pip
               pip install wheel
               pip install pyinstaller $TOOL
               echo \"__version__ = '$VERSION'\" >$VERSION_PY
