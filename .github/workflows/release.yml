@@ -55,10 +55,12 @@ jobs:
             bash -c "
               set -e
               cd /src
-              curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
-              mv bin/micromamba /usr/local/bin/
-              micromamba create -y -c conda-forge python=3.9 -p /opt/python39
-              /opt/python39/bin/python -m venv .venv
+#              curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
+#              mv bin/micromamba /usr/local/bin/
+#              micromamba create -y -c conda-forge python=3.9 -p /opt/python39
+#              /opt/python39/bin/python -m venv .venv
+              yum install -y python3
+              /usr/bin/python3 -m venv .venv
               source .venv/bin/activate
               pip install wheel
               pip install pyinstaller $TOOL
@@ -154,10 +156,12 @@ jobs:
             bash -c "
               set -e
               cd /src
-              curl -Ls https://micro.mamba.pm/api/micromamba/linux-$ARCH/latest| tar -xvj bin/micromamba
-              mv bin/micromamba /usr/local/bin/
-              micromamba create -y -c conda-forge python=3.9 -p /opt/python39
-              /opt/python39/bin/python -m venv .venv
+#              curl -Ls https://micro.mamba.pm/api/micromamba/linux-$ARCH/latest| tar -xvj bin/micromamba
+#              mv bin/micromamba /usr/local/bin/
+#              micromamba create -y -c conda-forge python=3.9 -p /opt/python39
+#              /opt/python39/bin/python -m venv .venv
+              yum install -y python3
+              /usr/bin/python3 -m venv .venv
               source .venv/bin/activate
               pip install wheel
               pip install pyinstaller $TOOL
