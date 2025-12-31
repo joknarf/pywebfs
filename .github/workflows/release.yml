@@ -213,7 +213,7 @@ jobs:
         run: |
           PKG=$TOOL-$ARCH.rpm
           PKGVER=$TOOL-$VERSION-1.$ARCH.rpm
-          cp $PKGVER yum/PKG
+          cp $PKGVER yum/$PKG
           cd yum
           git add $PKG
           git commit -m "Update $PKG to $VERSION" || echo "No changes to commit"
